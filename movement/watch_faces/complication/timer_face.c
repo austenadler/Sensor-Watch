@@ -245,6 +245,8 @@ bool timer_face_loop(movement_event_t event, movement_settings_t *settings, void
                     _settings_increment(state);
                     subsecond = 0;
                 } else _abort_quick_cycle(state);
+            } else if (state->mode == waiting) {
+                break;
             }
             _draw(state, subsecond);
             break;
