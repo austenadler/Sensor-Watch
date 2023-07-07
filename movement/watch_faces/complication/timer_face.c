@@ -30,6 +30,9 @@
 #include "watch.h"
 #include "watch_utility.h"
 
+// The timer number to display at the top. If the first timer is at index 2, set this to 2
+#define FIRST_TIMER_INDEX 1
+
 static const uint16_t _default_timer_values[] = {0x200, 0x500, 0xA00, 0x1400, 0x2D02}; // default timers: 2 min, 5 min, 10 min, 20 min, 2 h 45 min
 
 // sound sequence for a single beeping sequence
@@ -208,7 +211,12 @@ void timer_face_setup(movement_settings_t *settings, uint8_t watch_face_index, v
 void timer_face_activate(movement_settings_t *settings, void *context) {
     (void) settings;
     timer_state_t *state = (timer_state_t *)context;
-    watch_display_string("TR", 0);
+    char buf[3];
+    // This requires all timers to be adjacent and FIRST_TIMER_INDEX to be set
+    uint8_t timer_number = state->watch_face_index + 1 - FIRST_TIMER_INDEX;
+    // Only print the last digit of the timer number
+    sprintf(buf, "%uT", timer_number % 10);
+    watch_display_string(buf, 0);
     watch_set_colon();
     if(state->mode == running) {
         watch_date_time now = watch_rtc_get_date_time();

@@ -29,10 +29,9 @@
 
 const watch_face_t watch_faces[] = {
     simple_clock_face,
-    world_clock_face,
+    timer_face, timer_face, timer_face, timer_face, timer_face,
     sunrise_sunset_face,
-    moon_phase_face,
-    stopwatch_face,
+    // Settings faces
     preferences_face,
     set_time_face,
     thermistor_readout_face,
