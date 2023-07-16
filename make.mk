@@ -63,8 +63,8 @@ LDFLAGS += -mcpu=cortex-m0plus -mthumb
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=$(TOP)/watch-library/hardware/linker/saml22j18.ld
 
-LIBS += -lm
 LIBS += $(TOP)/sensor_watch_rs/target/thumbv7em-none-eabi/release/libsensor_watch_rs.a
+LIBS += -lm
 
 INCLUDES += \
   -I$(TOP)/tinyusb/src \
