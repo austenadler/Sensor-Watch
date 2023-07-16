@@ -64,6 +64,7 @@ LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=$(TOP)/watch-library/hardware/linker/saml22j18.ld
 
 LIBS += -lm
+LIBS += $(TOP)/sensor_watch_rs/target/thumbv7em-none-eabi/release/libsensor_watch_rs.a
 
 INCLUDES += \
   -I$(TOP)/tinyusb/src \
@@ -96,6 +97,7 @@ INCLUDES += \
   -I$(TOP)/watch-library/hardware/hw/ \
   -I$(TOP)/watch-library/hardware/watch/ \
   -I$(TOP)/watch-library/hardware \
+  -I$(TOP)/sensor_watch_rs/ \
 
 SRCS += \
   $(TOP)/tinyusb/src/tusb.c \
@@ -166,6 +168,8 @@ CFLAGS += -W -Wall -Wextra -Wmissing-prototypes -Wmissing-declarations
 CFLAGS += -Wno-format -Wno-unused-parameter
 CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 
+LIBS += $(TOP)/sensor_watch_rs/target/wasm32-unknown-emscripten/release/libsensor_watch_rs.a
+
 INCLUDES += \
   -I$(TOP)/boards/$(BOARD) \
   -I$(TOP)/watch-library/shared/driver/ \
@@ -178,6 +182,7 @@ INCLUDES += \
   -I$(TOP)/watch-library/hardware/hal/utils/include/ \
   -I$(TOP)/watch-library/hardware/hpl/slcd/ \
   -I$(TOP)/watch-library/hardware/hw/ \
+  -I$(TOP)/sensor_watch_rs/ \
 
 SRCS += \
   $(TOP)/watch-library/simulator/main.c \

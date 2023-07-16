@@ -1,0 +1,19 @@
+[package]
+name = "sensor_watch_rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "sensor_watch_rs"
+crate-type = ["staticlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cty = "0.2.2"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
