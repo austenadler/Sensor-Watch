@@ -1,6 +1,9 @@
 use cty::{c_void, uint8_t};
 
+use super::err;
+
 pub struct MovementSettings {}
+pub struct MovementEvent {}
 
 #[no_mangle]
 pub extern "C" fn kitchen_timer_face_setup(
@@ -8,14 +11,28 @@ pub extern "C" fn kitchen_timer_face_setup(
     watch_face_index: uint8_t,
     context_ptr: *mut &mut c_void,
 ) {
-    no_stdout::dprint!("Called setup function");
+    err!("Called: kitchen_timer_face_setup");
 }
-// pub extern "C" fn void kitchen_timer_face_activate(settings: const *MovementSettings, void *context) {
-
-// }
-// pub extern "C" fn bool kitchen_timer_face_loop(movement_event_t event, settings: const *MovementSettings, void *context) {
-
-// }
-// pub extern "C" fn void kitchen_timer_face_resign(settings: const *MovementSettings, void *context) {
-
-// }
+#[no_mangle]
+pub extern "C" fn kitchen_timer_face_activate(
+    settings: *mut MovementSettings,
+    context: *mut &mut c_void,
+) {
+    err!("Called: kitchen_timer_face_activate");
+}
+#[no_mangle]
+pub extern "C" fn kitchen_timer_face_loop(
+    event: *mut MovementEvent,
+    settings: *mut MovementSettings,
+    context: *mut &mut c_void,
+) -> bool {
+    err!("Called: kitchen_timer_face_loop");
+    false
+}
+#[no_mangle]
+pub extern "C" fn kitchen_timer_face_resign(
+    settings: *mut MovementSettings,
+    context: *mut &mut c_void,
+) {
+    err!("Called: kitchen_timer_face_resign");
+}
