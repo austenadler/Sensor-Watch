@@ -14,7 +14,7 @@ else
 all: $(BUILD)/$(BIN).html
 endif
 
-$(BUILD)/$(BIN).html: $(OBJS)
+$(BUILD)/$(BIN).html: $(RUST_LIB) $(OBJS)
 	@echo HTML $@
 	@$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@ \
 		-s ASYNCIFY=1 \
@@ -22,9 +22,13 @@ $(BUILD)/$(BIN).html: $(OBJS)
 		-s EXPORTED_FUNCTIONS=_main \
 		--shell-file=$(TOP)/watch-library/simulator/shell.html
 
-$(BUILD)/$(BIN).elf: $(OBJS)
+$(BUILD)/$(BIN).elf: $(RUST_LIB) $(OBJS)
 	@echo LD $@
 	@$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+
+$(RUST_LIB):
+	@echo Cargo $(RUST_TARGET)
+	@cargo +nightly build --release --manifest-path $(TOP)/sensor_watch_rs/Cargo.toml --target $(RUST_TARGET) -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 
 $(BUILD)/$(BIN).hex: $(BUILD)/$(BIN).elf
 	@echo OBJCOPY $@
@@ -38,7 +42,7 @@ $(BUILD)/$(BIN).uf2: $(BUILD)/$(BIN).bin
 	@echo UF2CONV $@
 	@$(UF2) $^ -co $@
 
-.phony: $(SUBMODULES)
+.PHONY: $(SUBMODULES) $(RUST_LIB)
 $(SUBMODULES):
 	git submodule update --init
 

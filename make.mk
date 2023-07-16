@@ -63,7 +63,10 @@ LDFLAGS += -mcpu=cortex-m0plus -mthumb
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=$(TOP)/watch-library/hardware/linker/saml22j18.ld
 
-LIBS += $(TOP)/sensor_watch_rs/target/thumbv7em-none-eabi/release/libsensor_watch_rs.a
+RUST_TARGET=thumbv7em-none-eabi
+RUST_LIB = $(TOP)/sensor_watch_rs/target/$(RUST_TARGET)/release/libsensor_watch_rs.a
+
+LIBS += $(RUST_LIB)
 LIBS += -lm
 
 INCLUDES += \
@@ -168,7 +171,10 @@ CFLAGS += -W -Wall -Wextra -Wmissing-prototypes -Wmissing-declarations
 CFLAGS += -Wno-format -Wno-unused-parameter
 CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 
-LIBS += $(TOP)/sensor_watch_rs/target/wasm32-unknown-emscripten/release/libsensor_watch_rs.a
+RUST_TARGET=wasm32-unknown-emscripten
+RUST_LIB = $(TOP)/sensor_watch_rs/target/$(RUST_TARGET)/release/libsensor_watch_rs.a
+
+LIBS += $(RUST_LIB)
 
 INCLUDES += \
   -I$(TOP)/boards/$(BOARD) \
