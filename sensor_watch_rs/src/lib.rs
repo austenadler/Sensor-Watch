@@ -1,5 +1,7 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(unused_imports)]
+
+pub mod kitchen_timer_face;
 use core::ffi::{c_char, CStr};
 use core::panic::PanicInfo;
 use cty::uint8_t;
