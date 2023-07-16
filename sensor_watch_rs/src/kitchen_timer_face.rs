@@ -1,8 +1,28 @@
-use cty::{c_void, uint8_t};
+use cty::{c_void, uint32_t, uint8_t};
 
 use super::err;
 
-pub struct MovementSettings {}
+#[repr(C)]
+pub struct MovementSettingsInner {
+    button_should_sound: bool, //  : 1;
+    to_interval: uint8_t,      //  : 2;
+    to_always: bool,           //  : 1;
+    le_interval: uint8_t,      //  : 3;
+    led_duration: uint8_t,     //  : 2;
+    led_red_color: uint8_t,    //  : 4;
+    led_green_color: uint8_t,  //  : 4;
+    time_zone: uint8_t,        //  : 6;
+    clock_mode_24h: bool,      //  : 1;
+    use_imperial_units: bool,  //  : 1;
+    alarm_enabled: bool,       //  : 1;
+    reserved: uint8_t,         //  : 6;
+}
+#[repr(C)]
+pub struct MovementSettings {
+    reg: uint32_t,
+    bit: MovementSettingsInner,
+}
+
 pub struct MovementEvent {}
 
 #[no_mangle]
