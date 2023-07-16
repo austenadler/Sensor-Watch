@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(unused_imports)]
 use core::ffi::{c_char, CStr};
 use core::panic::PanicInfo;
@@ -14,6 +14,7 @@ extern "C" {
 }
 
 #[panic_handler]
+#[cfg(not(target_arch = "wasm32"))]
 fn no_panic(_: &PanicInfo) -> ! {
     loop {}
 }
