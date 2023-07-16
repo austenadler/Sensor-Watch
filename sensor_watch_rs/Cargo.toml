@@ -12,6 +12,9 @@ crate-type = ["staticlib"]
 [dependencies]
 cty = "0.2.2"
 
+[build-dependencies]
+cbindgen = "0.24.0"
+
 [profile.release]
 strip = true
 lto = true
