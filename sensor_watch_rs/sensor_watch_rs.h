@@ -9,37 +9,13 @@
 #include "watch.h"
 
 
-typedef struct MovementEvent MovementEvent;
+void kitchen_timer_face_activate(movement_settings_t *settings, void *context);
 
-typedef struct MovementSettingsInner {
-  bool button_should_sound;
-  uint8_t to_interval;
-  bool to_always;
-  uint8_t le_interval;
-  uint8_t led_duration;
-  uint8_t led_red_color;
-  uint8_t led_green_color;
-  uint8_t time_zone;
-  bool clock_mode_24h;
-  bool use_imperial_units;
-  bool alarm_enabled;
-  uint8_t reserved;
-} MovementSettingsInner;
+bool kitchen_timer_face_loop(movement_event_t event, movement_settings_t *settings, void *context);
 
-typedef struct MovementSettings {
-  uint32_t reg;
-  struct MovementSettingsInner bit;
-} MovementSettings;
+void kitchen_timer_face_resign(movement_settings_t *settings, void *context);
 
-void kitchen_timer_face_activate(struct MovementSettings *settings, void **context);
-
-bool kitchen_timer_face_loop(struct MovementEvent *event,
-                             struct MovementSettings *settings,
-                             void **context);
-
-void kitchen_timer_face_resign(struct MovementSettings *settings, void **context);
-
-void kitchen_timer_face_setup(struct MovementSettings *settings,
+void kitchen_timer_face_setup(movement_settings_t *settings,
                               uint8_t watch_face_index,
                               void **context_ptr);
 

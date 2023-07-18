@@ -11,6 +11,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 cty = "0.2.2"
+modular-bitfield = "0.11.2"
 
 [build-dependencies]
 cbindgen = "0.24.0"
