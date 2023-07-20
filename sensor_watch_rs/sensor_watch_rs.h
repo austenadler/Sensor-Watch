@@ -19,6 +19,4 @@ void kitchen_timer_face_setup(movement_settings_t *settings,
                               uint8_t watch_face_index,
                               void **context_ptr);
 
-void set_display_str(void);
-
 #endif /* SENSOR_WATCH_RS_H */
