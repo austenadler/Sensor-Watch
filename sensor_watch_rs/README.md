@@ -1,3 +1,4 @@
+clang
 cross-arm-linux-gnueabi-libc
 avr-libc
 
