@@ -2,6 +2,7 @@ extern crate cbindgen;
 
 use std::env;
 use std::path::PathBuf;
+use std::process::Command;
 
 use bindgen::EnumVariation;
 use cbindgen::Config;
@@ -34,66 +35,91 @@ fn bindgen() {
     // Tell cargo to invalidate the built crate whenever the wrapper changes
     println!("cargo:rerun-if-changed=wrapper.h");
 
+    let includes = match env::var("TARGET").unwrap().as_str() {
+        "thumbv7em-none-eabi" => [
+            "/usr/arm-linux-gnueabi/usr/include/",
+            "../tinyusb/src",
+            "../boards/OSO-SWAT-A1-05",
+            "../watch-library/shared/config/",
+            "../watch-library/shared/driver/",
+            "../watch-library/shared/watch/",
+            "../watch-library/hardware/include",
+            "../watch-library/hardware/hal/",
+            "../watch-library/hardware/hal/documentation/",
+            "../watch-library/hardware/hal/include/",
+            "../watch-library/hardware/hal/src/",
+            "../watch-library/hardware/hal/utils/",
+            "../watch-library/hardware/hal/utils/include/",
+            "../watch-library/hardware/hal/utils/src/",
+            "../watch-library/hardware/hpl/",
+            "../watch-library/hardware/hpl/core/",
+            "../watch-library/hardware/hpl/dmac/",
+            "../watch-library/hardware/hpl/eic/",
+            "../watch-library/hardware/hpl/gclk/",
+            "../watch-library/hardware/hpl/mclk/",
+            "../watch-library/hardware/hpl/osc32kctrl/",
+            "../watch-library/hardware/hpl/oscctrl/",
+            "../watch-library/hardware/hpl/pm/",
+            "../watch-library/hardware/hpl/port/",
+            "../watch-library/hardware/hpl/sercom/",
+            "../watch-library/hardware/hpl/slcd/",
+            "../watch-library/hardware/hpl/systick/",
+            "../watch-library/hardware/hri/",
+            "../watch-library/hardware/hw/",
+            "../watch-library/hardware/watch/",
+            "../watch-library/hardware",
+        ]
+        .iter()
+        .map(|s| format!("-I{s}"))
+        .collect(),
+        "wasm32-unknown-emscripten" => {
+            let mut includes = shell_words::split(
+                &String::from_utf8(
+                    Command::new("emcc")
+                        .arg("--cflags")
+                        .output()
+                        .unwrap()
+                        .stdout,
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            includes.extend(
+                [
+                    "../boards/OSO-SWAT-A1-05",
+                    "../watch-library/shared/driver/",
+                    "../watch-library/shared/config/",
+                    "../watch-library/shared/watch/",
+                    "../watch-library/simulator/watch/",
+                    "../watch-library/simulator/hpl/port/",
+                    "../watch-library/hardware/include/component",
+                    "../watch-library/hardware/hal/include/",
+                    "../watch-library/hardware/hal/utils/include/",
+                    "../watch-library/hardware/hpl/slcd/",
+                    "../watch-library/hardware/hw/",
+                ]
+                .iter()
+                .map(|s| format!("-I{s}")),
+            );
+            includes
+        }
+        t => panic!("Target {t} is not supported"),
+    };
+
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
     // the resulting bindings.
     let bindings = bindgen::Builder::default()
         .use_core()
-        // The input header we would like to generate
-        // bindings for.
         .header("wrapper.h")
-        // Tell cargo to invalidate the built crate whenever any of the
-        // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        // .clang_arg("-isystem")
-        // .clang_arg("-I/usr/include")
-        .clang_arg("-I/usr/arm-linux-gnueabi/usr/include/")
-        // .clang_arg("-I/usr/arm-linux-gnueabihf/usr/include/gnu")
-        .clang_args([
-            "-I../tinyusb/src",
-            "-I../boards/OSO-SWAT-A1-05",
-            "-I../watch-library/shared/config/",
-            "-I../watch-library/shared/driver/",
-            "-I../watch-library/shared/watch/",
-            "-I../watch-library/hardware/include",
-            "-I../watch-library/hardware/hal/",
-            "-I../watch-library/hardware/hal/documentation/",
-            "-I../watch-library/hardware/hal/include/",
-            "-I../watch-library/hardware/hal/src/",
-            "-I../watch-library/hardware/hal/utils/",
-            "-I../watch-library/hardware/hal/utils/include/",
-            "-I../watch-library/hardware/hal/utils/src/",
-            "-I../watch-library/hardware/hpl/",
-            "-I../watch-library/hardware/hpl/core/",
-            "-I../watch-library/hardware/hpl/dmac/",
-            "-I../watch-library/hardware/hpl/eic/",
-            "-I../watch-library/hardware/hpl/gclk/",
-            "-I../watch-library/hardware/hpl/mclk/",
-            "-I../watch-library/hardware/hpl/osc32kctrl/",
-            "-I../watch-library/hardware/hpl/oscctrl/",
-            "-I../watch-library/hardware/hpl/pm/",
-            "-I../watch-library/hardware/hpl/port/",
-            "-I../watch-library/hardware/hpl/sercom/",
-            "-I../watch-library/hardware/hpl/slcd/",
-            "-I../watch-library/hardware/hpl/systick/",
-            "-I../watch-library/hardware/hri/",
-            "-I../watch-library/hardware/hw/",
-            "-I../watch-library/hardware/watch/",
-            "-I../watch-library/hardware",
-        ])
-        // .allowlist_type("movement_settings_t")
-        // .allowlist_type("movement_event_t")
-        // .allowlist_type("movement_event_type_t")
+        .clang_args(includes)
         .allowlist_file("./../movement/movement.h")
-        .allowlist_file("./../watch-library/shared/watch/watch_slcd.h")
+        .allowlist_file("../watch-library/shared/watch/watch_slcd.h")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .default_enum_style(EnumVariation::NewType {
             is_bitfield: false,
             is_global: false,
         })
-        //
-        // .newtype_enum("movement_event_type_t")
-        // .constified_enum("movement_event_type_t")
-        // .constified_enum_module("movement_event_type_t")
         .generate()
         .expect("Unable to generate bindings");
     // panic!();

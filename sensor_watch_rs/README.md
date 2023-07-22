@@ -1,1 +1,5 @@
-cross-arm-linux-gnueabi-libc-0.35_4
+cross-arm-linux-gnueabi-libc
+avr-libc
+
+cross-arm-none-eabi-gcc
+cross-arm-none-eabi-newlib

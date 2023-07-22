@@ -106,15 +106,10 @@ macro_rules! log {
 }
 pub(crate) use log;
 
-// #[no_mangle]
-// pub extern "C" fn set_display_str() {
-//     unsafe { watch_display_string([b'R' as i8, b'U' as i8].as_ptr(), 0_u8) }
-// }
-
-// extern "C" {
-//     fn watch_display_string(string: *const c_char, position: uint8_t);
-//     // fn e(x: MovementEventType);
-// }
+#[no_mangle]
+pub extern "C" fn set_display_str() {
+    unsafe { watch_display_string([b'R' as i8, b'U' as i8].as_mut_ptr(), 0_u8) }
+}
 
 #[panic_handler]
 #[cfg(not(target_arch = "wasm32"))]

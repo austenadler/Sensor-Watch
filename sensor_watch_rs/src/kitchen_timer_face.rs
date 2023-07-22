@@ -1,7 +1,11 @@
 use cty::{c_void, uint32_t, uint8_t};
 
+use crate::movement_default_loop_handler;
 use crate::movement_event_t;
+use crate::movement_event_type_t;
 use crate::movement_settings_t;
+use crate::watch_display_string;
+use cstr::cstr;
 
 use super::err;
 
@@ -42,6 +46,15 @@ pub extern "C" fn kitchen_timer_face_activate(
     context: *mut c_void,
 ) {
     err!("Called: kitchen_timer_face_activate");
+    unsafe {
+        watch_display_string(
+            // cstr!("HI").as_ptr().cast_mut(),
+            cstr!("HI  RUST").as_ptr().cast_mut(),
+            // cstr!("HI  LESLIE").as_ptr().cast_mut(),
+            // [b'R' as i8, b'U' as i8, b'S' as i8, b'T' as i8, 0].as_mut_ptr(),
+            0,
+        )
+    };
 }
 #[no_mangle]
 pub extern "C" fn kitchen_timer_face_loop(
@@ -50,6 +63,14 @@ pub extern "C" fn kitchen_timer_face_loop(
     context: *mut c_void,
 ) -> bool {
     err!("Called: kitchen_timer_face_loop");
+    match movement_event_type_t(event.event_type as u32) {
+        movement_event_type_t::EVENT_ALARM_LONG_UP => {
+            err!("Got button event alarm long up");
+        }
+        _ => unsafe {
+            movement_default_loop_handler(event, settings);
+        },
+    }
     false
 }
 #[no_mangle]
@@ -58,4 +79,12 @@ pub extern "C" fn kitchen_timer_face_resign(
     context: *mut c_void,
 ) {
     err!("Called: kitchen_timer_face_resign");
+}
+#[no_mangle]
+pub extern "C" fn kitchen_timer_face_wants_background_task(
+    settings: *mut movement_settings_t,
+    context: *mut c_void,
+) -> bool {
+    err!("Called: kitchen_timer_face_wants_background_task");
+    false
 }
