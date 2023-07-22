@@ -13,11 +13,10 @@ crate-type = ["staticlib"]
 cstr = "0.2.11"
 cty = "0.2.2"
 modular-bitfield = "0.11.2"
+sensor_watch_sys = {path="../sensor_watch_sys/"}
 
 [build-dependencies]
 cbindgen = "0.24.0"
-bindgen = "0.65.1"
-shell-words = "1.1.0"
 
 [profile.release]
 strip = true

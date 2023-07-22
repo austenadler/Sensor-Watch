@@ -1,6 +1,8 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(unused_imports)]
 
+use sensor_watch_sys::watch_display_string;
+
 pub mod kitchen_timer_face;
 use core::ffi::{c_char, CStr};
 use core::panic::PanicInfo;
@@ -10,7 +12,7 @@ use modular_bitfield::{
     specifiers::{B2, B3, B4, B6},
 };
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+// include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // #[repr(C)]
 // pub enum MovementEventType {
