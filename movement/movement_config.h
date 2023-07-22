@@ -27,15 +27,22 @@
 
 #include "movement_faces.h"
 
+#define FACE(NAME) ((const watch_face_t){ \
+    NAME ## _face_setup, \
+    NAME ## _face_activate, \
+    NAME ## _face_loop, \
+    NAME ## _face_resign, \
+    NAME ## _face_wants_background_task, \
+})
+
 const watch_face_t watch_faces[] = {
     simple_clock_face,
-    timer_face, timer_face, timer_face, timer_face, timer_face,
+    timer_face,
+    FACE(kitchen_timer),
     sunrise_sunset_face,
     // Settings faces
     preferences_face,
     set_time_face,
-    thermistor_readout_face,
-    voltage_face
 };
 
 #define MOVEMENT_NUM_FACES (sizeof(watch_faces) / sizeof(watch_face_t))
