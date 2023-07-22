@@ -1,10 +1,13 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(non_camel_case_types)]
 
-use core::ffi::c_uint;
+use core::ffi::{c_uint, c_void};
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
+extern "C" {
+    pub fn malloc(size: usize) -> *mut c_void;
+}
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[repr(C)]
 pub struct MovementEvent {
