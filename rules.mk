@@ -49,7 +49,7 @@ $(SUBMODULES):
 install:
 	@$(UF2) -D $(BUILD)/$(BIN).uf2
 
-$(BUILD)/%.o: | $(SUBMODULES) directory
+$(BUILD)/%.o: | $(SUBMODULES) $(RUST_LIB) directory
 	@echo CC $@
 	@$(CC) $(CFLAGS) $(filter %/$(subst .o,.c,$(notdir $@)), $(SRCS)) -c -o $@
 

@@ -29,6 +29,7 @@
 #include "timer_face.h"
 #include "watch.h"
 #include "watch_utility.h"
+#include "sensor_watch_rs.h"
 
 // The timer number to display at the top. If the first timer is at index 2, set this to 2
 #define FIRST_TIMER_INDEX 1
@@ -216,7 +217,8 @@ void timer_face_activate(movement_settings_t *settings, void *context) {
     uint8_t timer_number = state->watch_face_index + 1 - FIRST_TIMER_INDEX;
     // Only print the last digit of the timer number
     sprintf(buf, "%uT", timer_number % 10);
-    watch_display_string(buf, 0);
+    // watch_display_string(buf, 0);
+    set_display_str();
     watch_set_colon();
     if(state->mode == running) {
         watch_date_time now = watch_rtc_get_date_time();
