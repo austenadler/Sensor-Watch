@@ -1,6 +1,10 @@
-clang
-cross-arm-linux-gnueabi-libc
-avr-libc
+[source,sh]
+----
+# Install dependencies
+xbps-install clang make gcc cross-arm-linux-gnueabi-libc
+# Also install emscripten https://emscripten.org/docs/getting_started/downloads.html
 
-cross-arm-none-eabi-gcc
-cross-arm-none-eabi-newlib
+# Install targets
+rustup target add thumbv7em-none-eabi wasm32-unknown-emscripten
+
+----
