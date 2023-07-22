@@ -6,6 +6,33 @@ use core::ffi::c_uint;
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[repr(C)]
+pub struct MovementEvent {
+    pub event_type: EventType,
+    pub subsecond: u8,
+}
+
+impl From<MovementEvent> for movement_event_t {
+    fn from(value: MovementEvent) -> Self {
+        Self {
+            event_type: value.event_type.into(),
+            subsecond: value.subsecond,
+        }
+    }
+}
+
+impl From<movement_event_t> for MovementEvent {
+    fn from(value: movement_event_t) -> Self {
+        Self {
+            event_type: value.event_type.into(),
+            subsecond: value.subsecond,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+// TODO: Repr?
+// #[repr(u8)]
 pub enum EventType {
     Activate,
     AlarmButtonDown,
@@ -26,6 +53,43 @@ pub enum EventType {
     Tick,
     Timeout,
     Other(c_uint),
+}
+
+impl From<u8> for EventType {
+    fn from(value: u8) -> Self {
+        movement_event_type_t(value as u32).into()
+    }
+}
+impl From<EventType> for u8 {
+    fn from(value: EventType) -> Self {
+        movement_event_type_t::from(value).0 as u8
+    }
+}
+
+impl From<EventType> for movement_event_type_t {
+    fn from(value: EventType) -> Self {
+        match value {
+            EventType::Activate => movement_event_type_t::EVENT_ACTIVATE,
+            EventType::AlarmButtonDown => movement_event_type_t::EVENT_ALARM_BUTTON_DOWN,
+            EventType::AlarmButtonUp => movement_event_type_t::EVENT_ALARM_BUTTON_UP,
+            EventType::AlarmLongPress => movement_event_type_t::EVENT_ALARM_LONG_PRESS,
+            EventType::AlarmLongUp => movement_event_type_t::EVENT_ALARM_LONG_UP,
+            EventType::BackgroundTask => movement_event_type_t::EVENT_BACKGROUND_TASK,
+            EventType::LightButtonDown => movement_event_type_t::EVENT_LIGHT_BUTTON_DOWN,
+            EventType::LightButtonUp => movement_event_type_t::EVENT_LIGHT_BUTTON_UP,
+            EventType::LightLongPress => movement_event_type_t::EVENT_LIGHT_LONG_PRESS,
+            EventType::LightLongUp => movement_event_type_t::EVENT_LIGHT_LONG_UP,
+            EventType::LowEnergyUpdate => movement_event_type_t::EVENT_LOW_ENERGY_UPDATE,
+            EventType::ModeButtonDown => movement_event_type_t::EVENT_MODE_BUTTON_DOWN,
+            EventType::ModeButtonUp => movement_event_type_t::EVENT_MODE_BUTTON_UP,
+            EventType::ModeLongPress => movement_event_type_t::EVENT_MODE_LONG_PRESS,
+            EventType::ModeLongUp => movement_event_type_t::EVENT_MODE_LONG_UP,
+            EventType::None => movement_event_type_t::EVENT_NONE,
+            EventType::Tick => movement_event_type_t::EVENT_TICK,
+            EventType::Timeout => movement_event_type_t::EVENT_TIMEOUT,
+            EventType::Other(c) => movement_event_type_t(c),
+        }
+    }
 }
 
 impl From<movement_event_type_t> for EventType {
@@ -55,6 +119,7 @@ impl From<movement_event_type_t> for EventType {
 }
 
 #[macro_export]
+/// Print to `console.log` if using emulator
 macro_rules! info {
     ($($arg:tt)*) => {{
         #[cfg(target_arch="wasm32")]
@@ -62,20 +127,10 @@ macro_rules! info {
     }};
 }
 #[macro_export]
+/// Print to `console.err` if using emulator
 macro_rules! error {
     ($($arg:tt)*) => {{
         #[cfg(target_arch="wasm32")]
         eprintln!($($arg)*);
     }};
 }
-
-// #[no_mangle]
-// pub extern "C" fn set_display_str() {
-//     unsafe { watch_display_string([b'R' as i8, b'U' as i8].as_mut_ptr(), 0_u8) }
-// }
-
-// #[panic_handler]
-// #[cfg(not(target_arch = "wasm32"))]
-// fn no_panic(_: &PanicInfo) -> ! {
-//     loop {}
-// }

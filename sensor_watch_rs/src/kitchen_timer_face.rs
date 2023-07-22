@@ -6,8 +6,10 @@ use sensor_watch_sys::movement_event_t;
 use sensor_watch_sys::movement_event_type_t;
 use sensor_watch_sys::movement_settings_t;
 use sensor_watch_sys::watch_display_string;
+use sensor_watch_sys::MovementEvent;
 
 use sensor_watch_sys::error;
+use sensor_watch_sys::info;
 
 #[no_mangle]
 pub extern "C" fn kitchen_timer_face_setup(
@@ -39,13 +41,12 @@ pub extern "C" fn kitchen_timer_face_loop(
     settings: *mut movement_settings_t,
     context: *mut c_void,
 ) -> bool {
-    error!("Called: kitchen_timer_face_loop");
-    match movement_event_type_t(event.event_type as u32) {
-        movement_event_type_t::EVENT_ALARM_LONG_UP => {
-            error!("Got button event alarm long up");
-        }
+    let event = MovementEvent::from(event);
+    info!("Event: {event:?}");
+
+    match event.event_type {
         _ => unsafe {
-            movement_default_loop_handler(event, settings);
+            movement_default_loop_handler(event.into(), settings);
         },
     }
     false
