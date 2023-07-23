@@ -3,7 +3,7 @@ use cstr::cstr;
 use cty::uint8_t;
 use sensor_watch_sys::{
     info, movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
-    watch_display_string, MovementEvent, EventType,
+    watch_display_string, EventType, MovementEvent,
 };
 
 #[derive(Debug)]
@@ -40,8 +40,7 @@ impl WatchFace for Context {
         info!("In face_loop {self:?} ({event:?})");
 
         match event.event_type {
-            EventType::Activate |
-            EventType::Tick => {
+            EventType::Activate | EventType::Tick => {
                 if self.last_viewed {
                     unsafe { watch_display_string(cstr!("HI  DANI").as_ptr().cast_mut(), 0) };
                 } else {
