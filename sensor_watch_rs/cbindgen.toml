@@ -149,7 +149,7 @@ extra_bindings = []
 
 
 [parse.expand]
-crates = []
+crates = ["sensor_watch_rs"]
 all_features = false
 default_features = true
 features = []
