@@ -39,6 +39,7 @@ const watch_face_t watch_faces[] = {
     simple_clock_face,
     timer_face,
     FACE(kitchen_timer),
+    FACE(hi_rust),
     sunrise_sunset_face,
     // Settings faces
     preferences_face,
