@@ -1,6 +1,7 @@
 use crate::{expose_face, face::WatchFace};
 use cstr::cstr;
-use sensor_watch_sys::{info, movement_settings_t__bindgen_ty_1, MovementEvent};
+use cty::uint8_t;
+use sensor_watch_sys::{info, movement_settings_t__bindgen_ty_1, MovementEvent, watch_display_string};
 
 #[derive(Debug)]
 #[repr(C)]
