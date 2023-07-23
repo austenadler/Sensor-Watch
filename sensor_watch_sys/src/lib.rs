@@ -131,7 +131,7 @@ impl From<movement_event_type_t> for EventType {
 /// Print to `console.log` if using emulator
 macro_rules! info {
     ($($arg:tt)*) => {{
-        #[cfg(target_arch="wasm32")]
+        #[cfg(not(target_arch="arm"))]
         println!($($arg)*);
     }};
 }
@@ -139,7 +139,7 @@ macro_rules! info {
 /// Print to `console.err` if using emulator
 macro_rules! error {
     ($($arg:tt)*) => {{
-        #[cfg(target_arch="wasm32")]
+        #[cfg(not(target_arch="arm"))]
         eprintln!($($arg)*);
     }};
 }
