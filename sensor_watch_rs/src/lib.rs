@@ -3,6 +3,8 @@
 
 use sensor_watch_sys::watch_display_string;
 
+pub mod face;
+mod hi_rust;
 pub mod kitchen_timer_face;
 use core::ffi::{c_char, CStr};
 use core::panic::PanicInfo;

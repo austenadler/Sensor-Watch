@@ -58,13 +58,8 @@ pub extern "C" fn kitchen_timer_face_activate(
     info!("Called: kitchen_timer_face_activate ({context:?})");
     let settings = unsafe { settings.as_mut().unwrap().bit };
     let mut context = unsafe { mem::transmute::<_, &mut Context>(context) };
-    context.x +=1;
-    unsafe {
-        watch_display_string(
-            cstr!("HI  DANI").as_ptr().cast_mut(),
-            0,
-        )
-    };
+    context.x += 1;
+    unsafe { watch_display_string(cstr!("HI  DANI").as_ptr().cast_mut(), 0) };
 }
 #[no_mangle]
 pub extern "C" fn kitchen_timer_face_loop(
