@@ -16,10 +16,10 @@ macro_rules! expose_face {
 
                 if unsafe { context_ptr.as_mut().unwrap() }.is_null() {
                     let _context = unsafe {
-                        *context_ptr = sensor_watch_sys::malloc(::core::mem::size_of::<$implementor>()) as *mut ::cty::c_void;
-                        let context = (*context_ptr as *mut $implementor).as_mut().unwrap();
-                        *context = <$implementor as WatchFace>::face_initial_setup(settings, watch_face_index);
-                        context
+                        *context_ptr = sensor_watch_sys::malloc(::core::mem::size_of::<::core::mem::MaybeUninit<$implementor>>()) as *mut ::core::ffi::c_void;
+                        let context = (*context_ptr as *mut ::core::mem::MaybeUninit<$implementor>).as_mut().unwrap();
+                        (*context).write(<$implementor as WatchFace>::face_initial_setup(settings, watch_face_index));
+                        context.assume_init_mut()
                     };
                 } else {
                     let context = unsafe{(*context_ptr as *mut $implementor).as_mut().unwrap()};
