@@ -1,7 +1,7 @@
 [source,sh]
 ----
 # Install dependencies
-xbps-install clang make gcc cross-arm-linux-gnueabi-libc
+xbps-install clang make gcc cross-arm-linux-gnueabi
 # Also install emscripten https://emscripten.org/docs/getting_started/downloads.html
 
 # Install targets

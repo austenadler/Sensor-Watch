@@ -57,7 +57,7 @@ fn bindgen() {
         .iter()
         .map(|s| format!("-I{s}"))
         .collect(),
-        "wasm32-unknown-emscripten" => {
+        "i686-unknown-linux-gnu" | "wasm32-unknown-emscripten" => {
             let mut includes = shell_words::split(
                 &String::from_utf8(
                     Command::new("emcc")
