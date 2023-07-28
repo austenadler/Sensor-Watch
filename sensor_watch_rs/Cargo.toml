@@ -7,6 +7,12 @@ edition = "2021"
 name = "sensor_watch_rs"
 crate-type = ["staticlib"]
 
+[workspace]
+members = [
+    ".",
+    "./derive",
+]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
