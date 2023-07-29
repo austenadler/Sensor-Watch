@@ -30,48 +30,6 @@ pub fn describe(input: TokenStream) -> TokenStream {
         Span::call_site(),
     );
 
-    // let description = match data {
-    // syn::Data::Struct(s) => match s.fields {
-    //     syn::Fields::Named(FieldsNamed { named, .. }) => {
-    //     let idents = named.iter().map(|f| &f.ident);
-    //     format!(
-    //         "a struct with these named fields: {}",
-    //         quote! {#(#idents), *}
-    //     )
-    //     }
-    //     syn::Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => {
-    //     let num_fields = unnamed.iter().count();
-    //     format!("a struct with {} unnamed fields", num_fields)
-    //     }
-    //     syn::Fields::Unit => format!("a unit struct"),
-    // },
-    // syn::Data::Enum(DataEnum { variants, .. }) => {
-    //     let vs = variants.iter().map(|v| &v.ident);
-    //     format!("an enum with these variants: {}", quote! {#(#vs),*})
-    // }
-    // syn::Data::Union(DataUnion {
-    //     fields: FieldsNamed { named, .. },
-    //     ..
-    // }) => {
-    //     let idents = named.iter().map(|f| &f.ident);
-    //     format!("a union with these named fields: {}", quote! {#(#idents),*})
-    // }
-    // };
-
-    // let output = quote! {
-    // impl #ident {
-    //     fn describe() {
-    //     println!("{} is {}.", stringify!(#ident), #description);
-    //     }
-    // }
-    // };
-
-    // output.into()
-    // let mut ret = proc_macro2::TokenStream::from(input.clone());
-    // let mut ret = proc_macro2::TokenStream::new();
-
-    // ret.extend();
-    // ret.into()
     quote! {
             #[no_mangle]
             pub extern "C" fn #ident_face_setup(
@@ -152,20 +110,11 @@ fn get_watch_face(attrs: &[Attribute]) -> String {
                 } else {
                     panic!("Unknown attribute. {panic_message}");
                 }
-            }, //         let (path, value) = match attribute.parse_meta().unwrap() {
-               // syn::Meta::NameValue(syn::MetaNameValue {
-               //     path,
-               //     lit: syn::Lit::Str(s),
-               //     ..
-               // }) => (path, s.value()),
-               // _ => panic!("malformed attribute syntax"),
+            }, 
         )
         .unwrap_or_else(|| panic!("{panic_message}"))
         .meta
     {
-        // Meta::NameValue(MetaNameValue {path, value,..}) => {
-        //     panic!("Path: {path:?}, lit: {value:?}")
-        // }
         Meta::List(MetaList { tokens, .. }) => {
             match tokens.clone().into_iter().next() {
                 Some(TokenTree::Ident(l)) => l.to_string(),
@@ -176,15 +125,9 @@ fn get_watch_face(attrs: &[Attribute]) -> String {
                     panic!("watch_face requires one argument");
                 }
             }
-            // let Some(t) = tokens.get(0)
         }
         i => {
             panic!("Unknown attribute type {i:?} {panic_message}");
         }
     }
-
-    // let watch_face_name = &
-    // ;
-
-    // panic!("attrs: {attrs:#?} ({watch_face_name:#?})");
 }
