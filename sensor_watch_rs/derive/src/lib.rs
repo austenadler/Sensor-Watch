@@ -1,21 +1,30 @@
 use proc_macro::{self, TokenStream};
 use proc_macro2::Ident;
 use proc_macro2::Span;
-use syn::Attribute;
-use quote::quote;
 use proc_macro2::TokenTree;
+use quote::quote;
+use syn::Attribute;
 use syn::Lit;
-use syn::{parse_macro_input, DataEnum, DataUnion, DeriveInput, FieldsNamed, FieldsUnnamed, MetaNameValue, Meta, MetaList};
+use syn::{
+    parse_macro_input, DataEnum, DataUnion, DeriveInput, FieldsNamed, FieldsUnnamed, Meta,
+    MetaList, MetaNameValue,
+};
 
 #[proc_macro_derive(WatchFace, attributes(watch_face))]
 pub fn describe(input: TokenStream) -> TokenStream {
-    let DeriveInput { ident, data, attrs, .. } = parse_macro_input!(input);
+    let DeriveInput {
+        ident, data, attrs, ..
+    } = parse_macro_input!(input);
     let watch_face_name = get_watch_face(&attrs);
 
     let ident_face_setup = Ident::new(&format!("{watch_face_name}_face_setup"), Span::call_site());
-    let ident_face_activate = Ident::new(&format!("{watch_face_name}_face_activate"), Span::call_site());
+    let ident_face_activate = Ident::new(
+        &format!("{watch_face_name}_face_activate"),
+        Span::call_site(),
+    );
     let ident_face_loop = Ident::new(&format!("{watch_face_name}_face_loop"), Span::call_site());
-    let ident_face_resign = Ident::new(&format!("{watch_face_name}_face_resign"), Span::call_site());
+    let ident_face_resign =
+        Ident::new(&format!("{watch_face_name}_face_resign"), Span::call_site());
     let ident_face_wants_background_task = Ident::new(
         &format!("{watch_face_name}_face_wants_background_task"),
         Span::call_site(),
@@ -63,7 +72,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
     // ret.extend();
     // ret.into()
-        quote! {
+    quote! {
             #[no_mangle]
             pub extern "C" fn #ident_face_setup(
                 settings: *mut ::sensor_watch_sys::movement_settings_t,
@@ -133,28 +142,33 @@ pub fn describe(input: TokenStream) -> TokenStream {
 fn get_watch_face(attrs: &[Attribute]) -> String {
     let panic_message = "#[watch_face(...)] attribute is required";
 
-    match &attrs.iter().find(
-        |w| if w.meta.path().get_ident().map(Ident::to_string).as_deref() == Some("watch_face") {
-                true
-            } else {
-                panic!("Unknown attribute. {panic_message}");
-            }
-    //         let (path, value) = match attribute.parse_meta().unwrap() {
-    // syn::Meta::NameValue(syn::MetaNameValue {
-    //     path,
-    //     lit: syn::Lit::Str(s),
-    //     ..
-    // }) => (path, s.value()),
-    // _ => panic!("malformed attribute syntax"),
-    ).unwrap_or_else(|| panic!("{panic_message}")).meta {
+    match &attrs
+        .iter()
+        .find(
+            |w| {
+                if w.meta.path().get_ident().map(Ident::to_string).as_deref() == Some("watch_face")
+                {
+                    true
+                } else {
+                    panic!("Unknown attribute. {panic_message}");
+                }
+            }, //         let (path, value) = match attribute.parse_meta().unwrap() {
+               // syn::Meta::NameValue(syn::MetaNameValue {
+               //     path,
+               //     lit: syn::Lit::Str(s),
+               //     ..
+               // }) => (path, s.value()),
+               // _ => panic!("malformed attribute syntax"),
+        )
+        .unwrap_or_else(|| panic!("{panic_message}"))
+        .meta
+    {
         // Meta::NameValue(MetaNameValue {path, value,..}) => {
         //     panic!("Path: {path:?}, lit: {value:?}")
         // }
-        Meta::List(MetaList {tokens, ..}) =>{
+        Meta::List(MetaList { tokens, .. }) => {
             match tokens.clone().into_iter().next() {
-                Some(TokenTree::Ident(l)) => {
-                    l.to_string()
-                }
+                Some(TokenTree::Ident(l)) => l.to_string(),
                 Some(t) => {
                     panic!("Ident required; {t:?} given");
                 }
@@ -163,7 +177,6 @@ fn get_watch_face(attrs: &[Attribute]) -> String {
                 }
             }
             // let Some(t) = tokens.get(0)
-
         }
         i => {
             panic!("Unknown attribute type {i:?} {panic_message}");

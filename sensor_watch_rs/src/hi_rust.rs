@@ -1,4 +1,4 @@
-use crate::{expose_face, face::WatchFace};
+use crate::face::WatchFace;
 use cstr::cstr;
 use cty::uint8_t;
 use derive::WatchFace;
@@ -15,8 +15,6 @@ struct Context {
     last_viewed: bool,
     watch_face_index: uint8_t,
 }
-
-// expose_face!(Context, hi_rust);
 
 impl WatchFace for Context {
     fn face_initial_setup(
