@@ -131,7 +131,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 }
 
 fn get_watch_face(attrs: &[Attribute]) -> String {
-    let panic_message = "#[\"watch_face\"] attribute is required";
+    let panic_message = "#[watch_face(...)] attribute is required";
 
     match &attrs.iter().find(
         |w| if w.meta.path().get_ident().map(Ident::to_string).as_deref() == Some("watch_face") {
