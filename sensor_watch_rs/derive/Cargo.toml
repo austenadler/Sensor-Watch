@@ -8,6 +8,8 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
+paste = "1.0.14"
 proc-macro2 = "1.0.66"
 quote = "1.0.32"
 syn = { version = "2.0.27", features = ["extra-traits", "full"] }
+# sensor_watch_rs = { path = ".." }

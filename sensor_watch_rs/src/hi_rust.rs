@@ -1,12 +1,14 @@
 use crate::{expose_face, face::WatchFace};
 use cstr::cstr;
 use cty::uint8_t;
+use derive::WatchFace;
 use sensor_watch_sys::{
     info, movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
     watch_display_string, EventType, MovementEvent,
 };
 
-#[derive(Debug)]
+#[derive(Debug, WatchFace)]
+#[watch_face(hi_rust)]
 // TODO: Is it unsafe to libc::malloc a non-repr(C) object, even if it's only accessed within rust?
 // #[repr(C)]
 struct Context {
@@ -14,7 +16,7 @@ struct Context {
     watch_face_index: uint8_t,
 }
 
-expose_face!(Context, hi_rust);
+// expose_face!(Context, hi_rust);
 
 impl WatchFace for Context {
     fn face_initial_setup(
