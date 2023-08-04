@@ -4,17 +4,11 @@ use proc_macro2::Span;
 use proc_macro2::TokenTree;
 use quote::quote;
 use syn::Attribute;
-use syn::Lit;
-use syn::{
-    parse_macro_input, DataEnum, DataUnion, DeriveInput, FieldsNamed, FieldsUnnamed, Meta,
-    MetaList, MetaNameValue,
-};
+use syn::{parse_macro_input, DeriveInput, Meta, MetaList};
 
 #[proc_macro_derive(WatchFace, attributes(watch_face))]
 pub fn describe(input: TokenStream) -> TokenStream {
-    let DeriveInput {
-        ident, data, attrs, ..
-    } = parse_macro_input!(input);
+    let DeriveInput { ident, attrs, .. } = parse_macro_input!(input);
     let watch_face_name = get_watch_face(&attrs);
 
     let ident_face_setup = Ident::new(&format!("{watch_face_name}_face_setup"), Span::call_site());
@@ -102,30 +96,25 @@ fn get_watch_face(attrs: &[Attribute]) -> String {
 
     match &attrs
         .iter()
-        .find(
-            |w| {
-                if w.meta.path().get_ident().map(Ident::to_string).as_deref() == Some("watch_face")
-                {
-                    true
-                } else {
-                    panic!("Unknown attribute. {panic_message}");
-                }
-            }, 
-        )
+        .find(|w| {
+            if w.meta.path().get_ident().map(Ident::to_string).as_deref() == Some("watch_face") {
+                true
+            } else {
+                panic!("Unknown attribute. {panic_message}");
+            }
+        })
         .unwrap_or_else(|| panic!("{panic_message}"))
         .meta
     {
-        Meta::List(MetaList { tokens, .. }) => {
-            match tokens.clone().into_iter().next() {
-                Some(TokenTree::Ident(l)) => l.to_string(),
-                Some(t) => {
-                    panic!("Ident required; {t:?} given");
-                }
-                None => {
-                    panic!("watch_face requires one argument");
-                }
+        Meta::List(MetaList { tokens, .. }) => match tokens.clone().into_iter().next() {
+            Some(TokenTree::Ident(l)) => l.to_string(),
+            Some(t) => {
+                panic!("Ident required; {t:?} given");
             }
-        }
+            None => {
+                panic!("watch_face requires one argument");
+            }
+        },
         i => {
             panic!("Unknown attribute type {i:?} {panic_message}");
         }
