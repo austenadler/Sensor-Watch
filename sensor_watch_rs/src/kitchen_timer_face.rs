@@ -1,105 +1,111 @@
-use core::mem;
-
-use cty::{c_void, uint32_t, uint8_t};
-
+use crate::face::WatchFace;
 use cstr::cstr;
-use sensor_watch_sys::movement_default_loop_handler;
-use sensor_watch_sys::movement_event_t;
-use sensor_watch_sys::movement_event_type_t;
-use sensor_watch_sys::movement_settings_t;
-use sensor_watch_sys::watch_display_string;
-use sensor_watch_sys::MovementEvent;
+use cty::uint8_t;
+use derive::WatchFace;
+use sensor_watch_sys::watch_date_time__bindgen_ty_1;
+use sensor_watch_sys::{
+    info, movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
+    watch_display_string, EventType, MovementEvent,
+};
 
-use sensor_watch_sys::info;
+const NUM_TIMERS: usize = 5;
+const DEFAULT_TIMER_TIMES: &[usize; 2] = &[30, 60];
 
 #[derive(Debug)]
-#[repr(C)]
+enum FaceState {
+    AllTimers,
+    Timer(u8),
+}
+
+#[derive(Debug, Default)]
+struct Timer {
+    started: bool,
+    end_time: Option<watch_date_time__bindgen_ty_1>,
+}
+
+#[derive(Debug, WatchFace)]
+#[watch_face(kitchen_timer)]
+// TODO: Is it unsafe to libc::malloc a non-repr(C) object, even if it's only accessed within rust?
+// #[repr(C)]
 struct Context {
-    x: u8,
-    y: u8,
+    face_state: FaceState,
     watch_face_index: uint8_t,
+    timers: [Timer; NUM_TIMERS],
 }
 
 impl Context {
-    fn new(watch_face_index: uint8_t) -> Self {
-        Self {
-            x: 0,
-            y: 0,
-            watch_face_index,
+    fn advance_state(&mut self) {
+        self.face_state = match self.face_state {
+            FaceState::AllTimers => FaceState::Timer(0_u8),
+            FaceState::Timer(n) if (n.saturating_add(1) ) as usize == NUM_TIMERS => FaceState::AllTimers,
+            FaceState::Timer(n) => FaceState::Timer(n+1_u8),
+        };
+    }
+
+    fn draw(&self) {
+        match self.face_state {
+            FaceState::AllTimers => unsafe {
+                watch_display_string(cstr!("AT  ").as_ptr().cast_mut(), 0);
+            },
+            FaceState::Timer(timer_n) => {
+                let number: [i8;2] = [(b'0' + timer_n).try_into().unwrap(), 0x0];
+                unsafe {
+                watch_display_string(number.as_ptr().cast_mut(), 0);
+                watch_display_string(cstr!("T  ").as_ptr().cast_mut(), 1);
+            }
+            },
         }
     }
 }
 
-#[no_mangle]
-pub extern "C" fn kitchen_timer_face_setup(
-    settings: *mut movement_settings_t,
-    watch_face_index: uint8_t,
-    context_ptr: *mut *mut c_void,
-) {
-    info!("Called: kitchen_timer_face_setup");
-    let settings = unsafe { settings.as_mut().unwrap().bit };
-
-    if unsafe { context_ptr.as_mut().unwrap() }.is_null() {
-        let context = unsafe {
-            *context_ptr = sensor_watch_sys::malloc(mem::size_of::<Context>()) as *mut c_void;
-            let context = (*context_ptr as *mut Context).as_mut().unwrap();
-            *context = Context::new(watch_face_index);
-            context
-        };
-
-        info!("Initialized context as {context:?}");
+impl WatchFace for Context {
+    fn face_initial_setup(
+        _settings: movement_settings_t__bindgen_ty_1,
+        watch_face_index: uint8_t,
+    ) -> Self {
+        info!("In face_initial_setup ({watch_face_index})");
+        Self {
+            face_state: FaceState::AllTimers,
+            watch_face_index,
+            timers: Default::default(),
+        }
     }
-}
-#[no_mangle]
-pub extern "C" fn kitchen_timer_face_activate(
-    settings: *mut movement_settings_t,
-    context: *mut c_void,
-) {
-    info!("Called: kitchen_timer_face_activate ({context:?})");
-    let settings = unsafe { settings.as_mut().unwrap().bit };
-    let mut context = unsafe { mem::transmute::<_, &mut Context>(context) };
-    context.x += 1;
-    unsafe { watch_display_string(cstr!("HI  DANI").as_ptr().cast_mut(), 0) };
-}
-#[no_mangle]
-pub extern "C" fn kitchen_timer_face_loop(
-    event: movement_event_t,
-    settings: *mut movement_settings_t,
-    context: *mut c_void,
-) -> bool {
-    let event = MovementEvent::from(event);
-    let mut context = unsafe { mem::transmute::<_, &mut Context>(context) };
 
-    info!("Event: {event:?} ({context:?})");
-
-    match event.event_type {
-        _ => unsafe {
-            movement_default_loop_handler(event.into(), settings);
-        },
+    fn face_activate(&mut self, _settings: movement_settings_t__bindgen_ty_1) {
+        info!("In face_activate {self:?}");
     }
-    false
-}
-#[no_mangle]
-pub extern "C" fn kitchen_timer_face_resign(
-    settings: *mut movement_settings_t,
-    context: *mut c_void,
-) {
-    let settings = unsafe { settings.as_mut().unwrap().bit };
-    let mut context = unsafe { mem::transmute::<_, &mut Context>(context) };
 
-    info!(
-        "Called: kitchen_timer_face_resign ({})",
-        settings.time_zone()
-    );
-}
-#[no_mangle]
-pub extern "C" fn kitchen_timer_face_wants_background_task(
-    settings: *mut movement_settings_t,
-    context: *mut c_void,
-) -> bool {
-    let settings = unsafe { settings.as_mut().unwrap().bit };
-    let mut context = unsafe { mem::transmute::<_, &mut Context>(context) };
+    fn face_loop(
+        &mut self,
+        event: MovementEvent,
+        settings: movement_settings_t__bindgen_ty_1,
+    ) -> bool {
+        info!("In face_loop {self:?} ({event:?})");
 
-    info!("Called: kitchen_timer_face_wants_background_task");
-    false
+        match event.event_type {
+            EventType::Tick => {}
+            EventType::Activate => {
+                self.draw();
+            }
+            EventType::LightButtonDown => {
+                info!("Advanced state");
+                self.advance_state();
+                info!("{:?}", self.face_state);
+
+                self.draw();
+            }
+            _ => {
+                unsafe {
+                    movement_default_loop_handler(event.into(), &mut (settings.into()));
+                }
+            }
+        }
+
+        false
+    }
+
+    fn face_resign(&mut self, _settings: movement_settings_t__bindgen_ty_1) {
+        info!("In face_resign {self:?}");
+        // self.last_viewed = false;
+    }
 }
