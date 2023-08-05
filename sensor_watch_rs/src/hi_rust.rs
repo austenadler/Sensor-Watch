@@ -13,7 +13,7 @@ use sensor_watch_sys::{
 // #[repr(C)]
 struct Context {
     last_viewed: bool,
-    watch_face_index: uint8_t,
+    _watch_face_index: uint8_t,
 }
 
 impl WatchFace for Context {
@@ -24,7 +24,7 @@ impl WatchFace for Context {
         info!("In face_initial_setup ({watch_face_index})");
         Self {
             last_viewed: false,
-            watch_face_index,
+            _watch_face_index: watch_face_index,
         }
     }
 

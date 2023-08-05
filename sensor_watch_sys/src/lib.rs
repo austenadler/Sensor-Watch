@@ -1,6 +1,7 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(non_camel_case_types)]
 use core::ffi::{c_uint, c_void, CStr};
+pub mod display;
 
 pub const WATCH_NUM_DIGITS: u8 = 10;
 
