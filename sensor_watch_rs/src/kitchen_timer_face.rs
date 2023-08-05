@@ -22,6 +22,7 @@ const DEFAULT_TIMER_PRESETS: &[usize; NUM_TIMER_PRESETS] = &[30, 60, 90];
 enum FaceState {
     AllTimers,
     Timer(usize),
+    EditPresets(usize),
 }
 
 #[derive(Debug)]
@@ -91,21 +92,18 @@ struct Context {
 
 impl Context {
     /// Idempotent logic to handle any changes in timer start/stop state
-    fn refresh_running_status(&mut self, force_update_display: bool) {
+    fn refresh_running_status(&mut self) {
         {
             // Update the number of running timers
-            let old_has_running_timers = self.num_running_timers > 0;
             self.num_running_timers = self.timers.iter().filter(|t| t.started).count() as u8;
-            let has_running_timers = self.num_running_timers > 0;
 
-            if old_has_running_timers != has_running_timers || force_update_display {
-                // Whatever we thought before is no longer true. Need to update indicators
-                self.display_indicator_state.set_bell(has_running_timers);
-            }
+            self.display_indicator_state
+                .set_bell(self.num_running_timers > 0);
         }
     }
 
     fn advance_state(&mut self) {
+        info!("Face state: {:?}", self.face_state);
         // TODO: If there are no running timers, should we show the first timer?
         self.face_state = match self.face_state {
             FaceState::AllTimers => FaceState::Timer(0),
@@ -113,42 +111,54 @@ impl Context {
                 FaceState::AllTimers
             }
             FaceState::Timer(n) => FaceState::Timer(n + 1),
+            FaceState::EditPresets(n) => FaceState::Timer(n),
         };
+    }
+
+    fn draw_all_timers_face(&mut self) {
+        sensor_watch_sys::watch_display_u8(self.num_running_timers as u8, false, 2);
+        unsafe {
+            watch_display_string(cstr!("AT  ").as_ptr().cast_mut(), 0);
+        }
+
+        let mut header_buf = [0x0; 4 + 1];
+        header_buf[0] = b'A';
+        header_buf[1] = b'T';
+        header_buf[2] = b' ';
+        sensor_watch_sys::write_u8_chars(
+            &mut header_buf[3..=4],
+            self.num_running_timers as u8,
+            false,
+        );
+        header_buf[4] = 0x0;
+
+        unsafe {
+            watch_display_string(
+                CStr::from_bytes_with_nul_unchecked(&header_buf)
+                    .as_ptr()
+                    .cast_mut(),
+                0,
+            );
+        }
+    }
+
+    fn draw_timer_face(&mut self, timer_n: usize) {
+        let timer = &self.timers[timer_n];
+        timer.draw(&self);
+        self.display_indicator_state.set_signal(timer.started);
+    }
+
+    fn draw_edit_face(&mut self) {
+        unsafe {
+            watch_display_string(cstr!("EDIT").as_ptr().cast_mut(), 0);
+        }
     }
 
     fn draw(&mut self) {
         match self.face_state {
-            FaceState::AllTimers => {
-                sensor_watch_sys::watch_display_u8(self.num_running_timers as u8, false, 2);
-                unsafe {
-                    watch_display_string(cstr!("AT  ").as_ptr().cast_mut(), 0);
-                }
-
-                let mut header_buf = [0x0; 4 + 1];
-                header_buf[0] = b'A';
-                header_buf[1] = b'T';
-                header_buf[2] = b' ';
-                sensor_watch_sys::write_u8_chars(
-                    &mut header_buf[3..=4],
-                    self.num_running_timers as u8,
-                    false,
-                );
-                header_buf[4] = 0x0;
-
-                unsafe {
-                    watch_display_string(
-                        CStr::from_bytes_with_nul_unchecked(&header_buf)
-                            .as_ptr()
-                            .cast_mut(),
-                        0,
-                    );
-                }
-            }
-            FaceState::Timer(timer_n) => {
-                let timer = &self.timers[timer_n];
-                timer.draw(&self);
-                self.display_indicator_state.set_signal(timer.started);
-            }
+            FaceState::AllTimers => self.draw_all_timers_face(),
+            FaceState::Timer(timer_n) => self.draw_timer_face(timer_n),
+            FaceState::EditPresets(_) => self.draw_edit_face(),
         }
     }
 }
@@ -178,7 +188,7 @@ impl WatchFace for Context {
         event: MovementEvent,
         settings: movement_settings_t__bindgen_ty_1,
     ) -> bool {
-        info!("In face_loop {self:?} ({event:?})");
+        // info!("In face_loop {self:?} ({event:?})");
 
         match event.event_type {
             EventType::Tick => {}
@@ -188,14 +198,28 @@ impl WatchFace for Context {
                 }
                 self.display_indicator_state = DisplayIndicatorState::default();
                 // Refresh our running timer status
-                self.refresh_running_status(true);
+                self.refresh_running_status();
                 self.face_state = FaceState::AllTimers;
                 self.draw();
             }
-            EventType::LightButtonUp => {
-                self.advance_state();
-                self.draw();
-            }
+            EventType::LightButtonUp => match self.face_state {
+                FaceState::AllTimers | FaceState::Timer(_) => {
+                    self.advance_state();
+                    self.draw();
+                }
+                FaceState::EditPresets(_) => {}
+            },
+            EventType::LightLongPress => match self.face_state {
+                FaceState::AllTimers => {}
+                FaceState::Timer(timer_n) => {
+                    self.face_state = FaceState::EditPresets(timer_n);
+                    self.draw();
+                }
+                FaceState::EditPresets(_) => {
+                    self.advance_state();
+                    self.draw();
+                }
+            },
             EventType::AlarmButtonUp => {
                 if let FaceState::Timer(timer_n) = self.face_state {
                     self.timers[timer_n].advance_timer_preset();
@@ -205,8 +229,8 @@ impl WatchFace for Context {
             EventType::AlarmLongPress => {
                 if let FaceState::Timer(timer_n) = self.face_state {
                     self.timers[timer_n].started = !self.timers[timer_n].started;
-                    self.refresh_running_status(false);
-                self.draw();
+                    self.refresh_running_status();
+                    self.draw();
                 }
             }
             EventType::LightButtonDown => {}
@@ -220,6 +244,5 @@ impl WatchFace for Context {
 
     fn face_resign(&mut self, _settings: movement_settings_t__bindgen_ty_1) {
         info!("In face_resign {self:?}");
-        // self.last_viewed = false;
     }
 }
