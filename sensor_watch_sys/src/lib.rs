@@ -1,7 +1,8 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(non_camel_case_types)]
+use core::ffi::{c_uint, c_void, CStr};
 
-use core::ffi::{c_uint, c_void};
+pub const WATCH_NUM_DIGITS: u8 = 10;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
@@ -124,6 +125,54 @@ impl From<movement_event_type_t> for EventType {
             movement_event_type_t::EVENT_TIMEOUT => Self::Timeout,
             c => Self::Other(c.0),
         }
+    }
+}
+
+/// Convert a u8 into a 2-digit number
+/// If it doesn't fit, just ignore the leftmost digit
+/// Unsafe because idx is not checked
+pub fn watch_display_u8(input: u8, two_digits: bool, idx: u8) {
+    {
+        // Check to make sure this will fit on the screen so we can make this function safe
+        let num_digits = if two_digits { 2 } else { 1 };
+        // Example: If we write 1 digit to digit idx 9, 1+9=10 => okay
+        // If we write two digits to digit idx 9, 2+9=11 => not okay
+        if idx + num_digits > 10 {
+            error!(
+                "Not attempting to write {num_digits} at idx {idx} as there is no digit to display"
+            );
+            return;
+        }
+    }
+    let mut buf = [0x0; 2 + 1];
+
+    write_u8_chars(&mut buf[0..=1], input, two_digits);
+    // Just in case the write_u8_chars api changes, ensure the last element is zero
+    buf[2] = 0x0;
+
+    // Now, actually write it
+    // buf is already zeroed, so we don't have to worry about null termination
+    unsafe {
+        watch_display_string(
+            CStr::from_bytes_with_nul_unchecked(&buf)
+                .as_ptr()
+                .cast_mut(),
+            idx,
+        );
+    }
+}
+
+/// Write either 1 or 2 digits to the buf
+pub fn write_u8_chars(buf: &mut [u8], input: u8, two_digits: bool) {
+    let right_digit = b'0' + (input % 10);
+    if two_digits {
+        // Two digits
+        let left_digit = b'0' + ((input / 10) % 10);
+        buf[0] = left_digit;
+        buf[1] = right_digit;
+    } else {
+        // One digit
+        buf[0] = right_digit;
     }
 }
 
