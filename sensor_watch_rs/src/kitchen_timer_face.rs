@@ -98,19 +98,19 @@ impl Context {
             self.num_running_timers = self.timers.iter().filter(|t| t.started).count() as u8;
 
             self.display_indicator_state
-                .set_bell(self.num_running_timers > 0);
+                .bell.set(self.num_running_timers > 0);
         }
     }
 
     fn advance_state(&mut self) {
-        info!("Face state: {:?}", self.face_state);
-        // TODO: If there are no running timers, should we show the first timer?
         self.face_state = match self.face_state {
             FaceState::AllTimers => FaceState::Timer(0),
-            FaceState::Timer(n) if (n.saturating_add(1)) as usize == NUM_TIMERS => {
+            FaceState::Timer(n)
+                if self.num_running_timers > 0 && (n.saturating_add(1)) as usize == NUM_TIMERS =>
+            {
                 FaceState::AllTimers
             }
-            FaceState::Timer(n) => FaceState::Timer(n + 1),
+            FaceState::Timer(n) => FaceState::Timer((n + 1) % NUM_TIMERS),
             FaceState::EditPresets(n) => FaceState::Timer(n),
         };
     }
@@ -118,39 +118,39 @@ impl Context {
     fn draw_all_timers_face(&mut self) {
         sensor_watch_sys::watch_display_u8(self.num_running_timers as u8, false, 2);
         unsafe {
-            watch_display_string(cstr!("AT  ").as_ptr().cast_mut(), 0);
+            watch_display_string(cstr!("AT        ").as_ptr().cast_mut(), 0);
         }
 
-        let mut header_buf = [0x0; 4 + 1];
-        header_buf[0] = b'A';
-        header_buf[1] = b'T';
-        header_buf[2] = b' ';
-        sensor_watch_sys::write_u8_chars(
-            &mut header_buf[3..=4],
-            self.num_running_timers as u8,
-            false,
-        );
-        header_buf[4] = 0x0;
+        // let mut header_buf = [0x0; 10 + 1];
+        // header_buf[0] = b'A';
+        // header_buf[1] = b'T';
+        // header_buf[2] = b' ';
+        // sensor_watch_sys::write_u8_chars(
+        //     &mut header_buf[3..=4],
+        //     self.num_running_timers as u8,
+        //     false,
+        // );
+        // header_buf[4] = 0x0;
 
-        unsafe {
-            watch_display_string(
-                CStr::from_bytes_with_nul_unchecked(&header_buf)
-                    .as_ptr()
-                    .cast_mut(),
-                0,
-            );
-        }
+        // unsafe {
+        //     watch_display_string(
+        //         CStr::from_bytes_with_nul_unchecked(&header_buf)
+        //             .as_ptr()
+        //             .cast_mut(),
+        //         0,
+        //     );
+        // }
     }
 
     fn draw_timer_face(&mut self, timer_n: usize) {
         let timer = &self.timers[timer_n];
         timer.draw(&self);
-        self.display_indicator_state.set_signal(timer.started);
+        self.display_indicator_state.signal.set(timer.started);
     }
 
     fn draw_edit_face(&mut self) {
         unsafe {
-            watch_display_string(cstr!("EDIT").as_ptr().cast_mut(), 0);
+            watch_display_string(cstr!("EDIT      ").as_ptr().cast_mut(), 0);
         }
     }
 
@@ -175,7 +175,7 @@ impl WatchFace for Context {
             timers: array::from_fn(Timer::new),
             num_running_timers: 0,
             timer_presets: DEFAULT_TIMER_PRESETS.clone(),
-            display_indicator_state: DisplayIndicatorState::default(),
+            display_indicator_state: DisplayIndicatorState::new(),
         }
     }
 
@@ -191,49 +191,74 @@ impl WatchFace for Context {
         // info!("In face_loop {self:?} ({event:?})");
 
         match event.event_type {
-            EventType::Tick => {}
+            EventType::Tick => {
+                // TODO: Need to update the timers here or something
+            }
             EventType::Activate => {
+                // Clear whole screen
                 unsafe {
                     watch_clear_display();
                 }
-                self.display_indicator_state = DisplayIndicatorState::default();
+                // Keep state of cleared screen
+                self.display_indicator_state = DisplayIndicatorState::new();
                 // Refresh our running timer status
                 self.refresh_running_status();
-                self.face_state = FaceState::AllTimers;
+                self.face_state = if self.num_running_timers == 0 {
+                    FaceState::Timer(0)
+                } else {
+                    FaceState::AllTimers
+                };
                 self.draw();
             }
-            EventType::LightButtonUp => match self.face_state {
-                FaceState::AllTimers | FaceState::Timer(_) => {
-                    self.advance_state();
-                    self.draw();
-                }
-                FaceState::EditPresets(_) => {}
-            },
-            EventType::LightLongPress => match self.face_state {
-                FaceState::AllTimers => {}
-                FaceState::Timer(timer_n) => {
-                    self.face_state = FaceState::EditPresets(timer_n);
-                    self.draw();
-                }
-                FaceState::EditPresets(_) => {
-                    self.advance_state();
-                    self.draw();
-                }
-            },
+            /* ======= Alarm Button ======= */
             EventType::AlarmButtonUp => {
-                if let FaceState::Timer(timer_n) = self.face_state {
-                    self.timers[timer_n].advance_timer_preset();
-                    self.draw();
+                match self.face_state {
+                    FaceState::AllTimers => {}
+                    FaceState::Timer(timer_n) => {
+                        self.timers[timer_n].advance_timer_preset();
+                    }
+                    FaceState::EditPresets(_) => {}
                 }
+                self.draw();
             }
             EventType::AlarmLongPress => {
-                if let FaceState::Timer(timer_n) = self.face_state {
-                    self.timers[timer_n].started = !self.timers[timer_n].started;
-                    self.refresh_running_status();
-                    self.draw();
+                match self.face_state {
+                    FaceState::AllTimers => {}
+                    FaceState::Timer(timer_n) => {
+                        self.timers[timer_n].started = !self.timers[timer_n].started;
+                        self.refresh_running_status();
+                    }
+                    FaceState::EditPresets(_) => {}
                 }
+                self.draw();
             }
-            EventType::LightButtonDown => {}
+            /* ======= Light Button ======= */
+            EventType::LightButtonUp => {
+                match self.face_state {
+                    FaceState::AllTimers | FaceState::Timer(_) => {
+                        self.advance_state();
+                    }
+                    FaceState::EditPresets(_) => {}
+                }
+                self.draw();
+            }
+            EventType::LightLongPress => {
+                match self.face_state {
+                    FaceState::AllTimers => {}
+                    FaceState::Timer(timer_n) => {
+                        self.face_state = FaceState::EditPresets(timer_n);
+                    }
+                    FaceState::EditPresets(_) => {
+                        self.advance_state();
+                    }
+                }
+                self.draw();
+            }
+            /* ======= End of Buttons ======= */
+            EventType::LightButtonDown => {
+                // Keep empty so the light is never illuminated
+                // Don't cook in the dark
+            }
             _ => unsafe {
                 movement_default_loop_handler(event.into(), &mut (settings.into()));
             },
