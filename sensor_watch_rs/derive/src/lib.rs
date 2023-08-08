@@ -1,10 +1,7 @@
 use proc_macro::{self, TokenStream};
-use proc_macro2::Ident;
-use proc_macro2::Span;
-use proc_macro2::TokenTree;
+use proc_macro2::{Ident, Span, TokenTree};
 use quote::quote;
-use syn::Attribute;
-use syn::{parse_macro_input, DeriveInput, Meta, MetaList};
+use syn::{parse_macro_input, Attribute, DeriveInput, Meta, MetaList};
 
 #[proc_macro_derive(WatchFace, attributes(watch_face))]
 pub fn describe(input: TokenStream) -> TokenStream {

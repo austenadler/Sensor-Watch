@@ -1,7 +1,7 @@
-use crate::movement_request_tick_frequency;
-use crate::watch_clear_indicator;
-use crate::watch_set_indicator;
-use crate::WatchIndicatorSegment;
+use crate::{
+    movement_request_tick_frequency, watch_clear_indicator, watch_set_indicator,
+    WatchIndicatorSegment,
+};
 
 /// Helper to not re-clear already cleared indicators
 #[derive(Debug)]

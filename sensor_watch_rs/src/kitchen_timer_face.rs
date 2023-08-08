@@ -1,17 +1,14 @@
-use core::array;
-use core::ffi::CStr;
+use core::{array, ffi::CStr};
 
 use crate::face::WatchFace;
 use cstr::cstr;
 use cty::uint8_t;
 use derive::WatchFace;
 use sensor_watch_sys::{
-    display::indicator::DisplayIndicatorState, watch_clear_display, watch_date_time__bindgen_ty_1,
-    WatchIndicatorSegment,
-};
-use sensor_watch_sys::{
-    info, movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
-    watch_display_string, watch_utility_offset_timestamp, EventType, MovementEvent,
+    display::indicator::DisplayIndicatorState, info, movement_default_loop_handler,
+    movement_settings_t, movement_settings_t__bindgen_ty_1, watch_clear_display,
+    watch_date_time__bindgen_ty_1, watch_display_string, watch_utility_offset_timestamp, EventType,
+    MovementEvent, WatchIndicatorSegment,
 };
 
 const NUM_TIMERS: usize = 5;
