@@ -34,7 +34,7 @@ impl<T: PartialEq> Idempotent<T> {
 }
 
 impl DisplayIndicatorState {
-    pub fn resign(&mut self) {
+    pub fn resign(mut self) {
         self.tick_frequency.set(1);
     }
 

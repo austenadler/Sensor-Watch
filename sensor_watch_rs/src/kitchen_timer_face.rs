@@ -25,7 +25,7 @@ enum FaceState {
     EditPresets(usize),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum TimerState {
     Ready,
     Started,
@@ -35,7 +35,7 @@ enum TimerState {
 // impl TimerState {
 //     /// Toggle the state of the timer
 //     ///
-//     /// Start the timer if stopped or paused, 
+//     /// Start the timer if stopped or paused,
 //     fn toggle(&self) -> Self {match self{
 //         Self::Ready => Self::Started,
 //         Self::Started => Self::Paused,
@@ -120,7 +120,11 @@ impl Context {
     fn refresh_running_status(&mut self) {
         {
             // Update the number of running timers
-            self.num_running_timers = self.timers.iter().filter(|t| t.started).count() as u8;
+            self.num_running_timers = self
+                .timers
+                .iter()
+                .filter(|t| t.state == TimerState::Started)
+                .count() as u8;
 
             self.display_indicator_state
                 .bell
@@ -147,16 +151,14 @@ impl Context {
     /// Return the idx of the next timer that will go off
     fn nearest_timer(&self) -> Option<&Timer> {
         // TODO: This just returns the first timer
-        self.timers.iter().find(|t| t.started)
+        self.timers.iter().find(|t| t.state == TimerState::Started)
     }
 
     fn draw_all_timers_face(&mut self) {
         // self.all_timers_idx = .map(|t| t.idx);
-        let Some(first_running_timer) = self
-            .all_timers_idx
-            .map(|idx| &self.timers[idx as usize])
-            // .as_ref()
-            // .or_else(|| self.nearest_timer())
+        let Some(first_running_timer) = self.all_timers_idx.map(|idx| &self.timers[idx as usize])
+        // .as_ref()
+        // .or_else(|| self.nearest_timer())
         else {
             // We don't want to be on the AT face if there are no running timers
             self.advance_state();
@@ -193,7 +195,9 @@ impl Context {
     fn draw_timer_face(&mut self, timer_n: usize) {
         let timer = &self.timers[timer_n];
         timer.draw(&self);
-        self.display_indicator_state.signal.set(timer.started);
+        self.display_indicator_state
+            .signal
+            .set(timer.state == TimerState::Started);
     }
 
     fn draw_edit_face(&mut self) {
@@ -237,7 +241,7 @@ impl WatchFace for Context {
         event: MovementEvent,
         settings: movement_settings_t__bindgen_ty_1,
     ) -> bool {
-        // info!("In face_loop {self:?} ({event:?})");
+        info!("Event: {event:?}");
 
         match event.event_type {
             EventType::Tick => {
@@ -266,18 +270,18 @@ impl WatchFace for Context {
                         // Next running timer
                     }
                     FaceState::Timer(timer_n) => {
-                        let timer = self.timers[timer_n];
+                        let timer = &self.timers[timer_n];
                         match timer.state {
                             TimerState::Ready => {
                                 // Next timer preset
                                 self.timers[timer_n].advance_timer_preset();
-                            },
+                            }
                             TimerState::Started => {
                                 // Add 30 seconds
-                            },
+                            }
                             TimerState::Paused => {
                                 // ?
-                            },
+                            }
                         }
                     }
                     FaceState::EditPresets(_) => {}
@@ -290,20 +294,20 @@ impl WatchFace for Context {
                         // Jump to timer at selected index
                     }
                     FaceState::Timer(timer_n) => {
-                        let mut timer = self.timers[timer_n];
+                        let timer = &mut self.timers[timer_n];
                         match timer.state {
                             TimerState::Ready => {
                                 // Start timer
                                 timer.state = TimerState::Started;
-                            },
+                            }
                             TimerState::Started => {
                                 // Pause timer
                                 timer.state = TimerState::Paused;
-                            },
+                            }
                             TimerState::Paused => {
                                 // Resume timer
                                 timer.state = TimerState::Started;
-                            },
+                            }
                         }
                         self.refresh_running_status();
                     }
@@ -327,15 +331,15 @@ impl WatchFace for Context {
                         // Reset the currently selected timer
                     }
                     FaceState::Timer(timer_n) => {
-                        let timer = self.timers[timer_n];
+                        let timer = &self.timers[timer_n];
                         match timer.state {
                             TimerState::Ready => {
                                 // Switch to edit mode
                                 self.face_state = FaceState::EditPresets(timer_n);
-                            },
+                            }
                             TimerState::Started | TimerState::Paused => {
                                 // Reset timer
-                            },
+                            }
                         }
                     }
                     FaceState::EditPresets(_) => {
@@ -349,6 +353,8 @@ impl WatchFace for Context {
             EventType::LightButtonDown => {
                 // Keep empty so the light is never illuminated
                 // Don't cook in the dark
+                info!("Increasing tick frequency");
+                self.display_indicator_state.tick_frequency.set(4);
             }
             _ => unsafe {
                 movement_default_loop_handler(event.into(), &mut (settings.into()));
@@ -361,6 +367,12 @@ impl WatchFace for Context {
     fn face_resign(&mut self, _settings: movement_settings_t__bindgen_ty_1) {
         info!("In face_resign {self:?}");
 
-        self.display_indicator_state.resign();
+        core::mem::replace(
+            &mut self.display_indicator_state,
+            DisplayIndicatorState::new(),
+        )
+        .resign();
+
+        // self.display_indicator_state.resign();
     }
 }
