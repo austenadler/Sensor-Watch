@@ -43,33 +43,33 @@ impl DisplayIndicatorState {
             h_24: Idempotent::new(false, |new_value| {
                 if *new_value {
                     unsafe {
-                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_24H);
                     }
                 } else {
                     unsafe {
-                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_24H);
                     }
                 }
             }),
             bell: Idempotent::new(false, |new_value| {
                 if *new_value {
                     unsafe {
-                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_BELL);
                     }
                 } else {
                     unsafe {
-                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_BELL);
                     }
                 }
             }),
             lap: Idempotent::new(false, |new_value| {
                 if *new_value {
                     unsafe {
-                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_LAP);
                     }
                 } else {
                     unsafe {
-                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_LAP);
                     }
                 }
             }),
@@ -87,11 +87,11 @@ impl DisplayIndicatorState {
             signal: Idempotent::new(false, |new_value| {
                 if *new_value {
                     unsafe {
-                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_set_indicator(WatchIndicatorSegment::WATCH_INDICATOR_SIGNAL);
                     }
                 } else {
                     unsafe {
-                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_PM);
+                        watch_clear_indicator(WatchIndicatorSegment::WATCH_INDICATOR_SIGNAL);
                     }
                 }
             }),
