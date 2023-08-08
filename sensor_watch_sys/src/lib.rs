@@ -151,15 +151,17 @@ pub fn watch_display_u8(input: u8, two_digits: bool, idx: u8) {
     // Just in case the write_u8_chars api changes, ensure the last element is zero
     buf[2] = 0x0;
 
-    // Now, actually write it
     // buf is already zeroed, so we don't have to worry about null termination
+    let cstr = unsafe { CStr::from_bytes_with_nul_unchecked(&buf) };
+
+    info!(
+        "Displaying {:?} at position {idx} (two_digits: {two_digits})",
+        cstr
+    );
+
+    // Now, actually write it
     unsafe {
-        watch_display_string(
-            CStr::from_bytes_with_nul_unchecked(&buf)
-                .as_ptr()
-                .cast_mut(),
-            idx,
-        );
+        watch_display_string(cstr.as_ptr().cast_mut(), idx);
     }
 }
 
