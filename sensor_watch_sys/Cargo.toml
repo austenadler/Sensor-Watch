@@ -22,6 +22,9 @@ shell-words = "1.1.0"
 [target.'cfg(target_arch="wasm32")'.dependencies]
 tracing = "0.1.37"
 
+[dependencies]
+cty = "0.2.2"
+
 # [profile.release]
 # strip = true
 # lto = true
