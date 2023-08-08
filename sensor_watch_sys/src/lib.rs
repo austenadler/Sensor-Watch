@@ -179,16 +179,17 @@ pub fn write_u8_chars(buf: &mut [u8], input: u8, two_digits: bool) {
     }
 }
 
-#[macro_export]
 /// Print to `console.log` if using emulator
+#[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {{
         #[cfg(not(target_arch="arm"))]
         println!($($arg)*);
     }};
 }
-#[macro_export]
+
 /// Print to `console.err` if using emulator
+#[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => {{
         #[cfg(not(target_arch="arm"))]

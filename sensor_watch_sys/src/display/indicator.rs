@@ -12,6 +12,8 @@ pub struct DisplayIndicatorState {
     pub pm: Idempotent<bool>,
     pub signal: Idempotent<bool>,
     pub tick_frequency: Idempotent<u8>,
+    // pub is_flashing: bool,
+    // flash_toggle: bool,
 }
 
 #[derive(Debug)]
@@ -37,6 +39,14 @@ impl DisplayIndicatorState {
     pub fn resign(mut self) {
         self.tick_frequency.set(1);
     }
+
+    // /// Toggle flashing state
+    // pub fn flash_tick(&mut self) {
+    //     self.flash_toggle = !self.flash_toggle;
+    // }
+
+    // pub fn draw(&self) {
+    // }
 
     pub fn new() -> Self {
         Self {
@@ -98,6 +108,8 @@ impl DisplayIndicatorState {
             tick_frequency: Idempotent::new(1, |new_value| unsafe {
                 movement_request_tick_frequency(*new_value);
             }),
+            // is_flashing: false,
+            // flash_toggle: false,
         }
     }
 }

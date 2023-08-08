@@ -71,6 +71,13 @@ impl Timer {
     }
 
     fn draw(&self, ctx: &Context) {
+        // if self.is_flashing && self.flash_toggle {
+        //         unsafe {
+        //             watch_clear_display();
+        //         }
+        //         return;
+        // }
+
         self.draw_header();
 
         // For debugging
@@ -113,6 +120,8 @@ struct Context {
     timer_presets: [usize; NUM_TIMER_PRESETS],
     display_indicator_state: DisplayIndicatorState,
     all_timers_idx: Option<u8>,
+    // is_flashing: bool,
+    // flashing_toggle: bool,
 }
 
 impl Context {
@@ -213,6 +222,35 @@ impl Context {
             FaceState::EditPresets(_) => self.draw_edit_face(),
         }
     }
+
+    /* ======= Timer functions ======= */
+    fn update_timer_state(&mut self, timer: &mut Timer, new_state: TimerState) {
+        match (&timer.state, &new_state) {
+            (TimerState::Ready, TimerState::Ready)
+            | (TimerState::Started, TimerState::Started)
+            | (TimerState::Paused, TimerState::Paused)
+            | (TimerState::Ready, TimerState::Paused) => {
+                // Impossible transition
+            }
+            (TimerState::Ready, TimerState::Started) => todo!(),
+            (TimerState::Started, TimerState::Ready) => todo!(),
+            (TimerState::Started, TimerState::Paused) => todo!(),
+            (TimerState::Paused, TimerState::Ready) => todo!(),
+            (TimerState::Paused, TimerState::Started) => todo!(),
+        }
+
+        // match timer.state {
+        //     TimerState::Ready => {
+        //         let remaining_time = self.timer_presets[timer.timer_preset_idx as usize];
+        //     },
+        //     TimerState::Started => todo!(),
+        //     TimerState::Paused => todo!(),
+        // };
+
+        // fn selected_preset_time(&self) -> usize {
+        //     self.timer_preset_idx % NUM_TIMER_PRESETS as u8;
+        // }
+    }
 }
 
 impl WatchFace for Context {
@@ -229,6 +267,8 @@ impl WatchFace for Context {
             timer_presets: DEFAULT_TIMER_PRESETS.clone(),
             display_indicator_state: DisplayIndicatorState::new(),
             all_timers_idx: None,
+            // is_flashing: false,
+            // flashing_toggle: false,
         }
     }
 
@@ -244,8 +284,13 @@ impl WatchFace for Context {
         info!("Event: {event:?}");
 
         match event.event_type {
+            EventType::Tick if event.subsecond == 0 => {
+                // Update all running timers
+                self.draw();
+            }
             EventType::Tick => {
-                // TODO: Need to update the timers here or something
+                // Update ui flashing tick
+                self.draw();
             }
             EventType::Activate => {
                 // Clear whole screen
@@ -319,6 +364,7 @@ impl WatchFace for Context {
             EventType::LightButtonUp => {
                 match self.face_state {
                     FaceState::AllTimers | FaceState::Timer(_) => {
+                        // Next timer
                         self.advance_state();
                     }
                     FaceState::EditPresets(_) => {}
@@ -353,8 +399,6 @@ impl WatchFace for Context {
             EventType::LightButtonDown => {
                 // Keep empty so the light is never illuminated
                 // Don't cook in the dark
-                info!("Increasing tick frequency");
-                self.display_indicator_state.tick_frequency.set(4);
             }
             _ => unsafe {
                 movement_default_loop_handler(event.into(), &mut (settings.into()));
