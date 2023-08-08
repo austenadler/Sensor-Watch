@@ -11,7 +11,7 @@ use sensor_watch_sys::{
 };
 use sensor_watch_sys::{
     info, movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
-    watch_display_string, EventType, MovementEvent,
+    watch_display_string, watch_utility_offset_timestamp, EventType, MovementEvent,
 };
 
 const NUM_TIMERS: usize = 5;
@@ -237,6 +237,10 @@ impl Context {
             (TimerState::Started, TimerState::Paused) => todo!(),
             (TimerState::Paused, TimerState::Ready) => todo!(),
             (TimerState::Paused, TimerState::Started) => todo!(),
+        }
+
+        unsafe {
+            watch_utility_offset_timestamp();
         }
 
         // match timer.state {

@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 use core::ffi::{c_uint, c_void, CStr};
 pub mod display;
+pub mod time;
 
 pub const WATCH_NUM_DIGITS: u8 = 10;
 

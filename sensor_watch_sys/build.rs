@@ -100,6 +100,8 @@ fn bindgen() {
         .clang_args(includes)
         .allowlist_file("./../movement/movement.h")
         .allowlist_file("../watch-library/shared/watch/watch_slcd.h")
+        .allowlist_file("./../watch-library/shared/watch/watch_utility.h")
+        .allowlist_file("./../watch-library/shared/watch/watch_rtc.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .default_enum_style(EnumVariation::NewType {
             is_bitfield: false,
