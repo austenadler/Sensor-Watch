@@ -117,6 +117,7 @@ impl Context {
 
     fn draw_all_timers_face(&mut self) {
         sensor_watch_sys::watch_display_u8(self.num_running_timers as u8, false, 2);
+        self.display_indicator_state.signal.set(false);
         unsafe {
             watch_display_string(cstr!("AT        ").as_ptr().cast_mut(), 0);
         }
