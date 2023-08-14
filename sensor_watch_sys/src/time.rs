@@ -3,10 +3,10 @@ use core::{ffi::CStr, fmt::Debug, ops::Add};
 use cty::uint32_t;
 
 use crate::{
-    movement_schedule_background_task_for_face, watch_date_time, watch_display_string,
+    info, movement_schedule_background_task_for_face, watch_date_time, watch_display_string,
     watch_rtc_get_date_time, watch_set_colon, watch_utility_date_time_from_unix_time,
     watch_utility_date_time_to_unix_time, watch_utility_offset_timestamp,
-    watch_utility_seconds_to_duration, write_u8_chars, info,
+    watch_utility_seconds_to_duration, write_u8_chars,
 };
 // use crate::watch_utility_date_time_to_unix_time;
 
@@ -57,7 +57,7 @@ impl Add<TimeEntry> for WatchDateTime {
 
     fn add(self, rhs: TimeEntry) -> Self::Output {
         // TODO: This might not be super efficient
-                Self::from_utc_secs(self.timestamp_utc() + rhs.as_seconds())
+        Self::from_utc_secs(self.timestamp_utc() + rhs.as_seconds())
     }
 }
 
