@@ -19,7 +19,7 @@ const DEFAULT_TIMER_PRESETS: &[TimeEntry; NUM_TIMER_PRESETS] = &[
     TimeEntry {
         hours: 0,
         minutes: 0,
-        seconds: 30,
+        seconds: 5,
     },
     TimeEntry {
         hours: 0,
@@ -91,6 +91,16 @@ impl Timer {
         self.timer_preset_idx = self.timer_preset_idx.saturating_add(1) % NUM_TIMER_PRESETS as u8;
     }
 
+    /// The number of seconds remaining until this timer ends
+    fn seconds_remaining(&self) -> u32 {
+        match &self.state {
+            TimerState::Ready => 0,
+            TimerState::Paused { time_remaining } | TimerState::Started { time_remaining } => {
+                time_remaining.as_seconds()
+            }
+        }
+    }
+
     // fn draw(&self, ctx: &Context) {
     // }
 
@@ -154,79 +164,84 @@ struct Context {
 impl Context {
     /// Handle any changes in timer start/stop state
     fn refresh_running_status(&mut self) {
+        // Update the number of running timers and bell icon
         {
-            // Update the number of running timers
             self.num_running_timers =
                 self.timers.iter().filter(|t| t.state.is_started()).count() as u8;
 
             self.display_indicator_state
                 .bell
                 .set(self.num_running_timers > 0);
+        }
 
-            // TODO: Work when the face is in the background
-            let new_next_timer_alarm = self
-                .timers
-                .iter()
-                .filter(|t| match t.state {
-                    TimerState::Started { time_remaining: _ } => true,
-                    TimerState::Ready | TimerState::Paused { time_remaining: _ } => false,
-                })
-                .reduce(|acc, t| match (&acc.state, &t.state) {
-                    (
-                        TimerState::Started {
-                            time_remaining: acc_time_remaining,
-                        },
-                        TimerState::Started {
-                            time_remaining: t_time_remaining,
-                        },
-                    ) => {
-                        if acc_time_remaining > t_time_remaining {
-                            t
-                        } else {
-                            acc
-                        }
-                    }
-
-                    (TimerState::Started { .. }, TimerState::Ready)
-                    | (TimerState::Started { .. }, TimerState::Paused { .. })
-                    | (TimerState::Ready, TimerState::Started { .. })
-                    | (TimerState::Paused { .. }, TimerState::Started { .. })
-                    | (TimerState::Ready, TimerState::Ready)
-                    | (TimerState::Ready, TimerState::Paused { .. })
-                    | (TimerState::Paused { .. }, TimerState::Ready)
-                    | (TimerState::Paused { .. }, TimerState::Paused { .. }) => acc,
-                })
-                .map(|t| t.idx);
-
-            match (self.next_timer_alarm, new_next_timer_alarm) {
-                (Some(old), Some(new)) => {
-                    if old != new {
-                        // sensor_watch_sys::movement_schedule_background_task
-
-                        // movement_schedule_background_task_for_face(state->watch_face_index, target_dt);
+        // TODO: Work when the face is in the background
+        let new_next_timer_alarm = self
+            .timers
+            .iter()
+            .filter(|t| match t.state {
+                TimerState::Started { time_remaining: _ } => true,
+                TimerState::Ready | TimerState::Paused { time_remaining: _ } => false,
+            })
+            // Get the timer that is supposed to go off next
+            .reduce(|acc, t| match (&acc.state, &t.state) {
+                (
+                    TimerState::Started {
+                        time_remaining: acc_time_remaining,
+                    },
+                    TimerState::Started {
+                        time_remaining: t_time_remaining,
+                    },
+                ) => {
+                    if acc_time_remaining > t_time_remaining {
+                        t
+                    } else {
+                        acc
                     }
                 }
-                (None, Some(_new)) => {
-                    // Adding a timer
-                    info!("Adding timer");
-                    let time = WatchDateTime::now();
-                    time.schedule_background_task_for_face(self.watch_face_index);
-                }
-                (Some(_old), None) => {
-                    // There was a timer, but there isn't now
-                    unsafe {
-                        movement_cancel_background_task();
-                    }
-                }
-                (None, None) => {
-                    // No change
+
+                (TimerState::Started { .. }, TimerState::Ready)
+                | (TimerState::Started { .. }, TimerState::Paused { .. })
+                | (TimerState::Ready, TimerState::Started { .. })
+                | (TimerState::Paused { .. }, TimerState::Started { .. })
+                | (TimerState::Ready, TimerState::Ready)
+                | (TimerState::Ready, TimerState::Paused { .. })
+                | (TimerState::Paused { .. }, TimerState::Ready)
+                | (TimerState::Paused { .. }, TimerState::Paused { .. }) => acc,
+            })
+            .map(|t| t.idx);
+
+        match (self.next_timer_alarm, new_next_timer_alarm) {
+            (Some(old), Some(new)) => {
+                if old != new {
+                    // sensor_watch_sys::movement_schedule_background_task
+
+                    // movement_schedule_background_task_for_face(state->watch_face_index, target_dt);
                 }
             }
+            (None, Some(new)) => {
+                // Adding a timer
+                info!("Adding timer");
+                // TODO: Get the time out of the timer properly
+                let time = WatchDateTime::now() + self.timers[new as usize].seconds_remaining();
 
-            self.next_timer_alarm = new_next_timer_alarm;
+                info!("Scheduling background task for {time:?}");
 
-            info!("Set next alarm to: {:?}", self.next_timer_alarm);
+                time.schedule_background_task_for_face(self.watch_face_index);
+            }
+            (Some(_old), None) => {
+                // There was a timer, but there isn't now
+                unsafe {
+                    movement_cancel_background_task();
+                }
+            }
+            (None, None) => {
+                // No change
+            }
         }
+
+        self.next_timer_alarm = new_next_timer_alarm;
+
+        info!("Set next alarm to: {:?}", self.next_timer_alarm);
     }
 
     fn advance_state(&mut self) {
