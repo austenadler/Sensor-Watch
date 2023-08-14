@@ -516,6 +516,7 @@ impl WatchFace for Context {
                                 timer.state = TimerState::Ready;
                             }
                         }
+                        self.refresh_running_status();
                     }
                     FaceState::EditPresets(_) => {
                         // Switch out of edit mode
@@ -529,7 +530,20 @@ impl WatchFace for Context {
                 // Keep empty so the light is never illuminated
                 // Don't cook in the dark
             }
-            _ => unsafe {
+            EventType::BackgroundTask => {
+                info!("Got background task wakeup");
+            }
+            EventType::AlarmButtonDown
+            | EventType::AlarmLongUp
+            | EventType::LightLongUp
+            | EventType::LowEnergyUpdate
+            | EventType::ModeButtonDown
+            | EventType::ModeButtonUp
+            | EventType::ModeLongPress
+            | EventType::ModeLongUp
+            | EventType::None
+            | EventType::Timeout
+            | EventType::Other(_) => unsafe {
                 movement_default_loop_handler(event.into(), &mut (settings.into()));
             },
         }
