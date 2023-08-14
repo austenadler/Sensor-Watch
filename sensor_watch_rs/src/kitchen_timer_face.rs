@@ -175,30 +175,8 @@ impl Timer {
         self.timer_preset_idx = self.timer_preset_idx.saturating_add(1) % NUM_TIMER_PRESETS as u8;
     }
 
-    fn draw(&self, ctx: &Context) {
-        // if self.is_flashing && self.flash_toggle {
-        //         unsafe {
-        //             watch_clear_display();
-        //         }
-        //         return;
-        // }
-
-        self.draw_header();
-        // Draw the time display
-        match &self.state {
-            TimerState::Ready => {
-                // Draw the preset that's ready to go
-                ctx.timer_presets[self.timer_preset_idx as usize].watch_display()
-            }
-            TimerState::Started { time_remaining } => {
-                time_remaining.watch_display();
-            }
-            TimerState::Paused { time_remaining } => {
-                // TODO: Flash here
-                time_remaining.watch_display();
-            }
-        }
-    }
+    // fn draw(&self, ctx: &Context) {
+    // }
 
     fn draw_header(&self) {
         let mut header_buf = [0x0; 4 + 1];
@@ -251,6 +229,7 @@ struct Context {
     timer_presets: [TimeEntry; NUM_TIMER_PRESETS],
     display_indicator_state: DisplayIndicatorState,
     all_timers_idx: Option<u8>,
+    blink_toggle: bool,
     // is_flashing: bool,
     // flashing_toggle: bool,
 }
@@ -315,10 +294,46 @@ impl Context {
     fn draw_timer_face(&mut self, timer_n: usize) {
         info!("Drawing timer face for {timer_n}");
         let timer = &self.timers[timer_n];
-        timer.draw(&self);
         self.display_indicator_state
             .signal
             .set(timer.state.is_started());
+
+        // if self.is_flashing && self.flash_toggle {
+        //         unsafe {
+        //             watch_clear_display();
+        //         }
+        //         return;
+        // }
+
+        timer.draw_header();
+        // Draw the time display
+        match &timer.state {
+            TimerState::Ready => {
+                self.display_indicator_state.tick_frequency.set(1);
+                // Draw the preset that's ready to go
+                self.timer_presets[timer.timer_preset_idx as usize].watch_display()
+            }
+            TimerState::Started { time_remaining } => {
+                self.display_indicator_state.tick_frequency.set(1);
+                time_remaining.watch_display();
+            }
+            TimerState::Paused { time_remaining } => {
+                // We want to blink more frequently
+                self.display_indicator_state.tick_frequency.set(2);
+
+                // TODO: Flash here
+                if self.blink_toggle {
+                    time_remaining.watch_display();
+                    // Blank the time
+                    unsafe {
+                        watch_display_string(cstr!("      ").as_ptr().cast_mut(), 4);
+                        watch_set_colon();
+                    }
+                } else {
+                    time_remaining.watch_display();
+                }
+            }
+        }
     }
 
     fn draw_edit_face(&mut self) {
@@ -403,6 +418,7 @@ impl WatchFace for Context {
             timer_presets: DEFAULT_TIMER_PRESETS.clone(),
             display_indicator_state: DisplayIndicatorState::new(),
             all_timers_idx: None,
+            blink_toggle: false,
             // is_flashing: false,
             // flashing_toggle: false,
         }
@@ -417,7 +433,9 @@ impl WatchFace for Context {
         event: MovementEvent,
         settings: movement_settings_t__bindgen_ty_1,
     ) -> bool {
-        // info!("Event: {event:?}");
+        if let EventType::Tick = event.event_type {
+            self.blink_toggle = !self.blink_toggle;
+        }
 
         match event.event_type {
             EventType::Tick if event.subsecond == 0 => {
