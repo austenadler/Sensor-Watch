@@ -1,6 +1,6 @@
 use crate::{
-    movement_request_tick_frequency, watch_clear_indicator, watch_set_indicator,
-    WatchIndicatorSegment, error,
+    error, movement_request_tick_frequency, watch_clear_indicator, watch_set_indicator,
+    WatchIndicatorSegment,
 };
 
 /// Helper to not re-clear already cleared indicators
@@ -21,7 +21,6 @@ pub struct Idempotent<T: PartialEq> {
     value: T,
     on_change: fn(&T),
 }
-
 
 impl<T: PartialEq + core::fmt::Display> Idempotent<T> {
     pub fn new(value: T, on_change: fn(&T)) -> Idempotent<T> {
