@@ -34,14 +34,21 @@ const DEFAULT_TIMER_PRESETS: &[TimeEntry; NUM_TIMER_PRESETS] = &[
 
 use sensor_watch_sys::time::WatchDateTime;
 
-#[derive(Debug, Clone, Copy)]
-struct TimeEntry {
-    hours: u8,
-    minutes: u8,
-    seconds: u8,
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct TimeEntry {
+    pub hours: u8,
+    pub minutes: u8,
+    pub seconds: u8,
 }
 
 impl TimeEntry {
+    pub fn tick(&mut self) -> bool {
+        // self.seconds = self.seconds.saturating_sub(1) ;
+        // TODO: This might not be super efficient
+        *self = Self::from_seconds(self.as_seconds().saturating_sub(1));
+        self.is_zero()
+    }
+
     pub fn watch_display(&self) {
         let mut buf = [0x0; 6 + 1];
 
@@ -61,6 +68,52 @@ impl TimeEntry {
         }
     }
 
+    pub fn is_zero(&self) -> bool {
+        self == &Self {
+            hours: 0,
+            minutes: 0,
+            seconds: 0,
+        }
+    }
+
+    /// ```rust
+    /// use crate::TimeEntry;
+    /// assert_eq!(TimeEntry::from_seconds(0), TimeEntry {hours:0, minutes:0, seconds:0});
+    /// assert_eq!(TimeEntry::from_seconds(32), TimeEntry {hours:0, minutes:0, seconds:32});
+    /// assert_eq!(TimeEntry::from_seconds(60), TimeEntry {hours:0, minutes:1, seconds:0});
+    /// assert_eq!(TimeEntry::from_seconds(59), TimeEntry {hours:0, minutes:0, seconds:59});
+    /// assert_eq!(TimeEntry::from_seconds(61), TimeEntry {hours:0, minutes:1, seconds:1});
+    /// assert_eq!(TimeEntry::from_seconds(3599), TimeEntry {hours:0, minutes:59, seconds:59});
+    /// assert_eq!(TimeEntry::from_seconds(3600), TimeEntry {hours:1, minutes:0, seconds:0});
+    /// assert_eq!(TimeEntry::from_seconds(3601), TimeEntry {hours:1, minutes:0, seconds:1});
+    /// assert_eq!(TimeEntry::from_seconds(3660), TimeEntry {hours:1, minutes:1, seconds:0});
+    /// ```
+    pub fn from_seconds(mut input: u32) -> Self {
+        let seconds = (input % 60) as u8;
+        input /= 60;
+        let minutes = (input % 60) as u8;
+        input /= 60;
+        let hours = (input % 60) as u8;
+
+        Self {
+            hours,
+            minutes,
+            seconds,
+        }
+    }
+
+    /// ```rust
+    /// use crate::TimeEntry;
+    /// assert_eq!(TimeEntry {hours:0, minutes:0, seconds:0}.as_seconds(), 0);
+    /// assert_eq!(TimeEntry {hours:0, minutes:0, seconds:32}.as_seconds(), 32);
+    /// assert_eq!(TimeEntry {hours:0, minutes:1, seconds:0}.as_seconds(), 60);
+    /// assert_eq!(TimeEntry {hours:0, minutes:0, seconds:59}.as_seconds(), 59);
+    /// assert_eq!(TimeEntry {hours:0, minutes:1, seconds:1}.as_seconds(), 61);
+    /// assert_eq!(TimeEntry {hours:0, minutes:59, seconds:59}.as_seconds(), 3599);
+    /// assert_eq!(TimeEntry {hours:1, minutes:0, seconds:0}.as_seconds(), 3600);
+    /// assert_eq!(TimeEntry {hours:1, minutes:0, seconds:1}.as_seconds(), 3601);
+    /// assert_eq!(TimeEntry {hours:1, minutes:1, seconds:0}.as_seconds(), 3660);
+    /// ```
     pub fn as_seconds(&self) -> u32 {
         self.seconds as u32 + self.minutes as u32 * 60 + self.hours as u32 * 60 * 60
     }
@@ -76,19 +129,20 @@ enum FaceState {
 #[derive(Debug)]
 enum TimerState {
     Ready,
-    /// The timer has started and has this target date time
+    /// The timer has started, and this will be counted down whenever the watch ticks
     Started {
-        target_time: u32,
-        time_remaining: u32,
+        time_remaining: TimeEntry,
     },
     /// The timer is paused, and there are u32 more seconds to wait
-    Paused(u32),
+    Paused {
+        time_remaining: TimeEntry,
+    },
 }
 
 impl TimerState {
     fn is_started(&self) -> bool {
         match self {
-            Self::Started{..} => true,
+            Self::Started { .. } => true,
             _ => false,
         }
     }
@@ -131,19 +185,46 @@ impl Timer {
 
         self.draw_header();
         // Draw the time display
-        match self.state {
-            TimerState::Ready => ctx.timer_presets[self.timer_preset_idx as usize].watch_display(),
-            TimerState::Started{..} => {},
-            TimerState::Paused(_remaining) => {},
+        match &self.state {
+            TimerState::Ready => {
+                // Draw the preset that's ready to go
+                ctx.timer_presets[self.timer_preset_idx as usize].watch_display()
+            }
+            TimerState::Started { time_remaining } => {
+                time_remaining.watch_display();
+            }
+            TimerState::Paused { time_remaining } => {
+                // TODO: Flash here
+                time_remaining.watch_display();
+            }
         }
     }
 
     fn draw_header(&self) {
         let mut header_buf = [0x0; 4 + 1];
-        sensor_watch_sys::write_u8_chars(&mut header_buf[0..=0], self.idx as u8 + 1, false);
-        header_buf[1] = b'T';
-        header_buf[2] = b' ';
-        sensor_watch_sys::write_u8_chars(&mut header_buf[3..=3], self.timer_preset_idx + 1, false);
+
+        // TODO: Decide if I want the preset number to show up at the top right
+
+        {
+            // Draws ` T x` where `x` is the timer number
+            header_buf[0] = b'T';
+            header_buf[1] = b' ';
+            header_buf[2] = b' ';
+            sensor_watch_sys::write_u8_chars(&mut header_buf[3..=3], self.idx as u8 + 1, false);
+        }
+
+        // {
+        //     // Draws `xT y` where `x` is the timer number, and `y` is the preset number
+        //     sensor_watch_sys::write_u8_chars(&mut header_buf[0..=0], self.idx as u8 + 1, false);
+        //     header_buf[1] = b'T';
+        //     header_buf[2] = b' ';
+        //     sensor_watch_sys::write_u8_chars(
+        //         &mut header_buf[3..=3],
+        //         self.timer_preset_idx + 1,
+        //         false,
+        //     );
+        // }
+
         // Just to be safe
         header_buf[4] = 0x0;
 
@@ -211,13 +292,16 @@ impl Context {
     }
 
     fn draw_all_timers_face(&mut self) {
+        info!("Drawing all timers face");
         // self.all_timers_idx = .map(|t| t.idx);
         let Some(first_running_timer) = self.all_timers_idx.map(|idx| &self.timers[idx as usize])
         // .as_ref()
         // .or_else(|| self.nearest_timer())
         else {
             // We don't want to be on the AT face if there are no running timers
+            // TODO: This shouldn't be in the draw function
             self.advance_state();
+            self.draw();
             return;
         };
 
@@ -229,6 +313,7 @@ impl Context {
     }
 
     fn draw_timer_face(&mut self, timer_n: usize) {
+        info!("Drawing timer face for {timer_n}");
         let timer = &self.timers[timer_n];
         timer.draw(&self);
         self.display_indicator_state
@@ -254,18 +339,15 @@ impl Context {
     fn start_timer(&mut self, timer_idx: usize) {
         info!("Starting timer {timer_idx}");
 
-        let timer = &self.timers[timer_idx];
+        let timer = &mut self.timers[timer_idx];
 
-        match timer.state {
-            TimerState::Started{..} => {
-                return;
-            }
+        match &timer.state {
             TimerState::Ready => {
-                let time_to_wait = self.timer_presets[timer.timer_preset_idx as usize];
+                let time_to_wait = &self.timer_presets[timer.timer_preset_idx as usize];
                 // watch_utility_offset_timestamp
-                let now = WatchDateTime::now().timestamp_utc();
-                let target_time = now + time_to_wait.as_seconds();
-                info!("Got difference of: {}s", target_time - now);
+                // let now = WatchDateTime::now().timestamp_utc();
+                // let target_time = now + time_to_wait.as_seconds();
+                // info!("Got difference of: {:?}", time_to_wait);
 
                 // unsafe {
                 //     watch_utility_offset_timestamp(
@@ -278,11 +360,31 @@ impl Context {
                 info!("Timer is ready. Wait time: {time_to_wait:?}");
 
                 timer.state = TimerState::Started {
-                    target_time,
-                    // time_remaining: 
+                    time_remaining: time_to_wait.clone(),
+                    // time_remaining: time_to_wait,
+                    // time_remaining:
                 };
             }
-            TimerState::Paused(_) => todo!(),
+            TimerState::Started { time_remaining: _ } => {
+                // We can't start a started timer
+                return;
+            }
+            TimerState::Paused { time_remaining } => {
+                timer.state = TimerState::Started {
+                    time_remaining: time_remaining.clone(),
+                }
+            }
+        }
+    }
+
+    fn tick_all_timers(&mut self) {
+        for t in &mut self.timers {
+            if let TimerState::Started {
+                ref mut time_remaining,
+            } = t.state
+            {
+                time_remaining.tick();
+            }
         }
     }
 }
@@ -320,6 +422,7 @@ impl WatchFace for Context {
         match event.event_type {
             EventType::Tick if event.subsecond == 0 => {
                 // Update all running timers
+                self.tick_all_timers();
                 self.draw();
             }
             EventType::Tick => {
@@ -335,11 +438,13 @@ impl WatchFace for Context {
                 self.display_indicator_state = DisplayIndicatorState::new();
                 // Refresh our running timer status
                 self.refresh_running_status();
+
                 self.face_state = if self.num_running_timers == 0 {
                     FaceState::Timer(0)
                 } else {
                     FaceState::AllTimers
                 };
+                info!("Initialized to {:?}", self.face_state);
                 self.draw();
             }
             /* ======= Alarm Button ======= */
@@ -350,15 +455,15 @@ impl WatchFace for Context {
                     }
                     FaceState::Timer(timer_n) => {
                         let timer = &self.timers[timer_n];
-                        match timer.state {
+                        match &timer.state {
                             TimerState::Ready => {
                                 // Next timer preset
                                 self.timers[timer_n].advance_timer_preset();
                             }
-                            TimerState::Started{..} => {
+                            TimerState::Started { time_remaining: _ } => {
                                 // Add 30 seconds
                             }
-                            TimerState::Paused(_) => {
+                            TimerState::Paused { time_remaining: _ } => {
                                 // ?
                             }
                         }
@@ -374,16 +479,18 @@ impl WatchFace for Context {
                     }
                     FaceState::Timer(timer_n) => {
                         let timer = &mut self.timers[timer_n];
-                        match timer.state {
+                        match &timer.state {
                             TimerState::Ready => {
                                 // Start timer
                                 self.start_timer(timer_n);
                             }
-                            TimerState::Started{..} => {
+                            TimerState::Started { time_remaining } => {
                                 // Pause timer
-                                // timer.state = TimerState::Paused;
+                                timer.state = TimerState::Paused {
+                                    time_remaining: time_remaining.clone(),
+                                };
                             }
-                            TimerState::Paused(_) => {
+                            TimerState::Paused { time_remaining: _ } => {
                                 // Resume timer
                                 self.start_timer(timer_n);
                             }
@@ -411,14 +518,16 @@ impl WatchFace for Context {
                         // Reset the currently selected timer
                     }
                     FaceState::Timer(timer_n) => {
-                        let timer = &self.timers[timer_n];
-                        match timer.state {
+                        let timer = &mut self.timers[timer_n];
+                        match &timer.state {
                             TimerState::Ready => {
                                 // Switch to edit mode
                                 self.face_state = FaceState::EditPresets(timer_n);
                             }
-                            TimerState::Started{..} | TimerState::Paused(_) => {
+                            TimerState::Started { time_remaining: _ }
+                            | TimerState::Paused { time_remaining: _ } => {
                                 // Reset timer
+                                timer.state = TimerState::Ready;
                             }
                         }
                     }
