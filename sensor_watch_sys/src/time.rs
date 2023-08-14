@@ -6,7 +6,7 @@ use crate::{
     movement_schedule_background_task_for_face, watch_date_time, watch_display_string,
     watch_rtc_get_date_time, watch_set_colon, watch_utility_date_time_from_unix_time,
     watch_utility_date_time_to_unix_time, watch_utility_offset_timestamp,
-    watch_utility_seconds_to_duration, write_u8_chars,
+    watch_utility_seconds_to_duration, write_u8_chars, info,
 };
 // use crate::watch_utility_date_time_to_unix_time;
 
@@ -44,16 +44,9 @@ impl WatchDateTime {
         unsafe { watch_utility_date_time_to_unix_time(self.0, 0) }
     }
 
-    // pub fn as_timestamp(&self, settings: *const c_void) -> uint32_t {
-    //     unsafe { watch_utility_date_time_to_unix_time(self.0, _get_tz_offset(settings)) }
-    // }
-
-    // where _get_tz_offset is:
-    // movement_timezone_offsets[settings->bit.time_zone] * 60
-
     pub fn schedule_background_task_for_face(&self, watch_face_index: u8) {
+        info!("Scheduling backgorund task for face {watch_face_index} for time {self:?}");
         unsafe {
-            // let target_dt = watch_date_time {reg: self.timestamp_utc()};
             movement_schedule_background_task_for_face(watch_face_index, self.0);
         }
     }
@@ -63,14 +56,8 @@ impl Add<TimeEntry> for WatchDateTime {
     type Output = Self;
 
     fn add(self, rhs: TimeEntry) -> Self::Output {
-        // TODO: This could probably be more efficient
+        // TODO: This might not be super efficient
                 Self::from_utc_secs(self.timestamp_utc() + rhs.as_seconds())
-
-        // let i: u32 = unsafe {
-        //     watch_utility_offset_timestamp(self.timestamp_utc(), rhs.hours as i8, rhs.minutes as i8, rhs.seconds as i8)
-        // };
-
-        // todo!();
     }
 }
 
