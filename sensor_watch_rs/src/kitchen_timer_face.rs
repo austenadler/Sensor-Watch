@@ -154,9 +154,13 @@ struct Context {
     num_running_timers: u8,
     timer_presets: [TimeEntry; NUM_TIMER_PRESETS],
     display_indicator_state: DisplayIndicatorState,
+    // The timer index that the all_timers is displaying
     all_timers_idx: Option<u8>,
     blink_toggle: bool,
-    next_timer_alarm: Option<u8>,
+    /// The number of seconds until the next alarm goes off, and the index of the timer
+    next_alarm: Option<(u32, u8)>,
+    // /// The next timer that will go off
+    // next_timer_alarm: Option<u8>,
     // is_flashing: bool,
     // flashing_toggle: bool,
 }
@@ -164,6 +168,8 @@ struct Context {
 impl Context {
     /// Handle any changes in timer start/stop state
     fn refresh_running_status(&mut self) {
+        info!("Refreshing running status");
+
         // Update the number of running timers and bell icon
         {
             self.num_running_timers =
@@ -174,74 +180,81 @@ impl Context {
                 .set(self.num_running_timers > 0);
         }
 
+        // The next timer that will be going off
+        self.next_alarm = self.nearest_timer().map(|t| (t.seconds_remaining(), t.idx));
+
+        info!("Set next_alarm to {:?}", self.next_alarm);
+
         // TODO: Work when the face is in the background
-        let new_next_timer_alarm = self
-            .timers
-            .iter()
-            .filter(|t| match t.state {
-                TimerState::Started { time_remaining: _ } => true,
-                TimerState::Ready | TimerState::Paused { time_remaining: _ } => false,
-            })
-            // Get the timer that is supposed to go off next
-            .reduce(|acc, t| match (&acc.state, &t.state) {
-                (
-                    TimerState::Started {
-                        time_remaining: acc_time_remaining,
-                    },
-                    TimerState::Started {
-                        time_remaining: t_time_remaining,
-                    },
-                ) => {
-                    if acc_time_remaining > t_time_remaining {
-                        t
-                    } else {
-                        acc
-                    }
-                }
+        // let new_next_timer_alarm = self
+        //     .timers
+        //     .iter()
+        //     .filter(|t| match t.state {
+        //         TimerState::Started { time_remaining: _ } => true,
+        //         TimerState::Ready | TimerState::Paused { time_remaining: _ } => false,
+        //     })
+        //     // Get the timer that is supposed to go off next
+        //     .reduce(|acc, t| match (&acc.state, &t.state) {
+        //         (
+        //             TimerState::Started {
+        //                 time_remaining: acc_time_remaining,
+        //             },
+        //             TimerState::Started {
+        //                 time_remaining: t_time_remaining,
+        //             },
+        //         ) => {
+        //             if acc_time_remaining > t_time_remaining {
+        //                 t
+        //             } else {
+        //                 acc
+        //             }
+        //         }
 
-                (TimerState::Started { .. }, TimerState::Ready)
-                | (TimerState::Started { .. }, TimerState::Paused { .. })
-                | (TimerState::Ready, TimerState::Started { .. })
-                | (TimerState::Paused { .. }, TimerState::Started { .. })
-                | (TimerState::Ready, TimerState::Ready)
-                | (TimerState::Ready, TimerState::Paused { .. })
-                | (TimerState::Paused { .. }, TimerState::Ready)
-                | (TimerState::Paused { .. }, TimerState::Paused { .. }) => acc,
-            })
-            .map(|t| t.idx);
+        //         (TimerState::Started { .. }, TimerState::Ready)
+        //         | (TimerState::Started { .. }, TimerState::Paused { .. })
+        //         | (TimerState::Ready, TimerState::Started { .. })
+        //         | (TimerState::Paused { .. }, TimerState::Started { .. })
+        //         | (TimerState::Ready, TimerState::Ready)
+        //         | (TimerState::Ready, TimerState::Paused { .. })
+        //         | (TimerState::Paused { .. }, TimerState::Ready)
+        //         | (TimerState::Paused { .. }, TimerState::Paused { .. }) => acc,
+        //     })
+        //     .map(|t| t.idx);
 
-        match (self.next_timer_alarm, new_next_timer_alarm) {
-            (Some(old), Some(new)) => {
-                if old != new {
-                    // sensor_watch_sys::movement_schedule_background_task
+        // match (self.next_timer_alarm, new_next_timer_alarm) {
+        //     (Some(old), Some(new)) => {
+        //         if old != new {
+        //             info!("One timer stopped, but there is another running");
+        //             // sensor_watch_sys::movement_schedule_background_task
 
-                    // movement_schedule_background_task_for_face(state->watch_face_index, target_dt);
-                }
-            }
-            (None, Some(new)) => {
-                // Adding a timer
-                info!("Adding timer");
-                // TODO: Get the time out of the timer properly
-                let time = WatchDateTime::now() + self.timers[new as usize].seconds_remaining();
+        //             // movement_schedule_background_task_for_face(state->watch_face_index, target_dt);
+        //         }
+        //     }
+        //     (None, Some(new)) => {
+        //         // Adding a timer
+        //         info!("Adding timer");
+        //         // TODO: Get the time out of the timer properly
+        //         let time = WatchDateTime::now() + self.timers[new as usize].seconds_remaining();
 
-                info!("Scheduling background task for {time:?}");
+        //         info!("Scheduling background task for {time:?}");
+        //         time.schedule_background_task_for_face(self.watch_face_index);
+        //     }
+        //     (Some(_old), None) => {
+        //         info!("Timer ended");
+        //         // There was a timer, but there isn't now
+        //         unsafe {
+        //             movement_cancel_background_task();
+        //         }
+        //     }
+        //     (None, None) => {
+        //         info!("No timer is running");
+        //         // No change
+        //     }
+        // }
 
-                time.schedule_background_task_for_face(self.watch_face_index);
-            }
-            (Some(_old), None) => {
-                // There was a timer, but there isn't now
-                unsafe {
-                    movement_cancel_background_task();
-                }
-            }
-            (None, None) => {
-                // No change
-            }
-        }
+        // self.next_timer_alarm = new_next_timer_alarm;
 
-        self.next_timer_alarm = new_next_timer_alarm;
-
-        info!("Set next alarm to: {:?}", self.next_timer_alarm);
+        // info!("Set next alarm to: {:?}", self.next_timer_alarm);
     }
 
     fn advance_state(&mut self) {
@@ -251,7 +264,6 @@ impl Context {
                 if self.num_running_timers > 0 && (n.saturating_add(1)) as usize == NUM_TIMERS =>
             {
                 // Whenever we switch to all timers state, update the nearest timer
-
                 self.all_timers_idx = self.nearest_timer().map(|t| t.idx);
                 FaceState::AllTimers
             }
@@ -260,10 +272,12 @@ impl Context {
         };
     }
 
-    /// Return the idx of the next timer that will go off
+    /// Return the next timer that will go off
     fn nearest_timer(&self) -> Option<&Timer> {
-        // TODO: This just returns the first timer
-        self.timers.iter().find(|t| t.state.is_started())
+        self.timers
+            .iter()
+            .filter(|t| t.state.is_started())
+            .min_by(|a, b| a.seconds_remaining().cmp(&b.seconds_remaining()))
     }
 
     fn draw_all_timers_face(&mut self) {
@@ -288,7 +302,7 @@ impl Context {
     }
 
     fn draw_timer_face(&mut self, timer_n: usize) {
-        info!("Drawing timer face for {timer_n}");
+        // info!("Drawing timer face for {timer_n}");
         let timer = &self.timers[timer_n];
         self.display_indicator_state
             .signal
@@ -383,6 +397,14 @@ impl Context {
             }
         }
     }
+
+    fn beep_timer(&mut self, idx: u8) {
+        let timer = &mut self.timers[idx as usize];
+        info!("Beepiing {idx} times");
+
+        // Reset timer
+        timer.state = TimerState::Ready;
+    }
 }
 
 impl WatchFace for Context {
@@ -400,8 +422,7 @@ impl WatchFace for Context {
             display_indicator_state: DisplayIndicatorState::new(),
             all_timers_idx: None,
             blink_toggle: false,
-            /// The next timer that will go off
-            next_timer_alarm: None,
+            next_alarm: None,
             // is_flashing: false,
             // flashing_toggle: false,
         }
@@ -424,6 +445,19 @@ impl WatchFace for Context {
             EventType::Tick if event.subsecond == 0 => {
                 // Update all running timers
                 self.tick_all_timers();
+
+                match self.next_alarm {
+                    Some((0, idx)) => {
+                        // An alarm is going off
+                        self.beep_timer(idx);
+                        self.refresh_running_status();
+                    }
+                    Some((n, idx)) => {
+                        self.next_alarm = Some((n.saturating_sub(1), idx));
+                    }
+                    None => {}
+                };
+
                 self.draw();
             }
             EventType::Tick => {
