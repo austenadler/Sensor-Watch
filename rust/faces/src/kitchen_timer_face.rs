@@ -5,7 +5,7 @@ use cty::uint8_t;
 use sensor_watch_rs::{
     derive::WatchFace,
     time::WatchDateTime,
-    display::indicator::DisplayIndicatorState,
+    display::DisplayIndicatorState,
     face::WatchFace,
     info,
     EventType, MovementEvent, write_u8_chars,watch_display_u8, 
