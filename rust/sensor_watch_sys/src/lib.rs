@@ -11,3 +11,9 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 extern "C" {
     pub fn malloc(size: usize) -> *mut c_void;
 }
+
+impl From<movement_settings_t__bindgen_ty_1> for movement_settings_t {
+    fn from(value: movement_settings_t__bindgen_ty_1) -> Self {
+        Self { bit: value }
+    }
+}

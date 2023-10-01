@@ -1,6 +1,9 @@
 use crate::{
-    error, movement_request_tick_frequency, watch_clear_indicator, watch_set_indicator,
-    WatchIndicatorSegment,
+    error,
+    sys::{
+        movement_request_tick_frequency, watch_clear_indicator, watch_set_indicator,
+        WatchIndicatorSegment,
+    },
 };
 
 /// Helper to not re-clear already cleared indicators

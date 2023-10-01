@@ -3,10 +3,14 @@ use core::{ffi::CStr, fmt::Debug, ops::Add};
 use cty::uint32_t;
 
 use crate::{
-    info, movement_schedule_background_task_for_face, watch_date_time, watch_display_string,
-    watch_rtc_get_date_time, watch_set_colon, watch_utility_date_time_from_unix_time,
-    watch_utility_date_time_to_unix_time, watch_utility_offset_timestamp,
-    watch_utility_seconds_to_duration, write_u8_chars,
+    info,
+    sys::{
+        movement_schedule_background_task_for_face, watch_date_time, watch_display_string,
+        watch_rtc_get_date_time, watch_set_colon, watch_utility_date_time_from_unix_time,
+        watch_utility_date_time_to_unix_time, watch_utility_offset_timestamp,
+        watch_utility_seconds_to_duration,
+    },
+    write_u8_chars,
 };
 // use crate::watch_utility_date_time_to_unix_time;
 

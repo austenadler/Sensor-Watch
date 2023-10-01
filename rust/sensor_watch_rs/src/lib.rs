@@ -1,12 +1,19 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(unused_imports)]
 
-pub mod face;
 pub mod display;
+pub mod face;
 pub mod time;
 
-use core::panic::PanicInfo;
+use core::{
+    ffi::{c_uint, c_void, CStr},
+    panic::PanicInfo,
+};
 pub use sensor_watch_sys as sys;
+use sys::{
+    movement_event_t, movement_event_type_t, movement_settings_t,
+    movement_settings_t__bindgen_ty_1, watch_display_string,
+};
 
 pub const WATCH_NUM_DIGITS: u8 = 10;
 
@@ -22,12 +29,6 @@ pub const WATCH_NUM_DIGITS: u8 = 10;
 pub struct MovementEvent {
     pub event_type: EventType,
     pub subsecond: u8,
-}
-
-impl From<movement_settings_t__bindgen_ty_1> for movement_settings_t {
-    fn from(value: movement_settings_t__bindgen_ty_1) -> Self {
-        Self { bit: value }
-    }
 }
 
 impl From<MovementEvent> for movement_event_t {

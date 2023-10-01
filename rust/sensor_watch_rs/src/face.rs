@@ -1,5 +1,5 @@
+use crate::{info, sys::movement_settings_t__bindgen_ty_1, MovementEvent};
 use cty::uint8_t;
-use crate::sys::{info, movement_settings_t__bindgen_ty_1, MovementEvent};
 
 pub trait WatchFace {
     fn face_initial_setup(
