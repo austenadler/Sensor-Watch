@@ -55,7 +55,7 @@ impl WatchDateTime {
 impl Add<u32> for WatchDateTime {
     type Output = Self;
 
-/// Add the number of seconds to this `WatchDateTime`
+    /// Add the number of seconds to this `WatchDateTime`
     fn add(self, rhs: u32) -> Self::Output {
         // TODO: This might not be super efficient
         Self::from_utc_secs(self.timestamp_utc() + rhs)

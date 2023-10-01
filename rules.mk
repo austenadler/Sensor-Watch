@@ -28,7 +28,7 @@ $(BUILD)/$(BIN).elf: $(RUST_LIB) $(OBJS)
 
 $(RUST_LIB):
 	@echo Cargo $(RUST_TARGET)
-	@cargo +nightly build --release --manifest-path $(TOP)/sensor_watch_rs/Cargo.toml --target $(RUST_TARGET) -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
+	@cargo +nightly build --release --manifest-path $(TOP)/rust/faces/Cargo.toml --target $(RUST_TARGET) -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 
 $(BUILD)/$(BIN).hex: $(BUILD)/$(BIN).elf
 	@echo OBJCOPY $@

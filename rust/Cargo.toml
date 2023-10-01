@@ -1,0 +1,38 @@
+# [package]
+# name = "sensor_watch_rs"
+# version = "0.1.0"
+# edition = "2021"
+
+# [lib]
+# name = "sensor_watch_rs"
+# crate-type = ["staticlib"]
+
+[workspace]
+members = [
+    # "./faces",
+    "./sensor_watch_rs",
+    "./sensor_watch_rs/derive",
+    "./sensor_watch_sys",
+]
+resolver = "2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [dependencies]
+# cstr = "0.2.11"
+# cty = "0.2.2"
+# libc = { version = "0.2.147", default-features = false }
+# modular-bitfield = "0.11.2"
+# paste = "1.0.14"
+# sensor_watch_sys = {path="../sensor_watch_sys/"}
+# derive = {path="./derive/"}
+
+# [build-dependencies]
+# cbindgen = "0.24.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+opt-level =  "z"

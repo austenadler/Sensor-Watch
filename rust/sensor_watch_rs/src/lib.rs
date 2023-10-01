@@ -1,20 +1,22 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
-#![allow(rustdoc::bare_urls)]
 #![allow(unused_imports)]
-#![allow(non_camel_case_types)]
-// We're importing from c, give me a break
-#![allow(non_upper_case_globals)]
-use core::ffi::{c_uint, c_void, CStr};
+
+pub mod face;
 pub mod display;
 pub mod time;
 
+use core::panic::PanicInfo;
+pub use sensor_watch_sys as sys;
+
 pub const WATCH_NUM_DIGITS: u8 = 10;
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+// pub use face::WatchFace;
 
-extern "C" {
-    pub fn malloc(size: usize) -> *mut c_void;
-}
+// #[no_mangle]
+// pub extern "C" fn set_display_str() {
+//     unsafe { watch_display_string([b'R' as i8, b'U' as i8].as_mut_ptr(), 0_u8) }
+// }
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[repr(C)]
 pub struct MovementEvent {
@@ -200,4 +202,10 @@ macro_rules! error {
         #[cfg(not(target_arch="arm"))]
         eprintln!($($arg)*);
     }};
+}
+
+#[panic_handler]
+#[cfg(not(target_arch = "wasm32"))]
+fn no_panic(_: &PanicInfo) -> ! {
+    loop {}
 }
