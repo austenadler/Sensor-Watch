@@ -4,6 +4,7 @@
 pub mod display;
 pub mod face;
 pub mod time;
+pub use derive;
 
 use core::{
     ffi::{c_uint, c_void, CStr},

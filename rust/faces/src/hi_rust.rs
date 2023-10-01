@@ -1,10 +1,13 @@
-use crate::face::WatchFace;
 use cstr::cstr;
 use cty::uint8_t;
-use derive::WatchFace;
-use sensor_watch_sys::{
-    info, movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
-    watch_display_string, EventType, MovementEvent,
+use sensor_watch_rs::{
+    derive::WatchFace,
+    face::WatchFace,
+    info,EventType, MovementEvent,
+    sys::{
+        movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
+        watch_display_string, 
+    },
 };
 
 #[derive(Debug, WatchFace)]

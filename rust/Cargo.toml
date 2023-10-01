@@ -9,7 +9,7 @@
 
 [workspace]
 members = [
-    # "./faces",
+    "./faces",
     "./sensor_watch_rs",
     "./sensor_watch_rs/derive",
     "./sensor_watch_sys",

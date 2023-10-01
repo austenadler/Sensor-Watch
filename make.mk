@@ -64,7 +64,7 @@ LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=$(TOP)/watch-library/hardware/linker/saml22j18.ld
 
 RUST_TARGET=thumbv7em-none-eabi
-RUST_LIB = $(TOP)/sensor_watch_rs/target/$(RUST_TARGET)/release/libsensor_watch_rs.a
+RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
 
 LIBS += $(RUST_LIB)
 LIBS += -lm
@@ -100,7 +100,7 @@ INCLUDES += \
   -I$(TOP)/watch-library/hardware/hw/ \
   -I$(TOP)/watch-library/hardware/watch/ \
   -I$(TOP)/watch-library/hardware \
-  -I$(TOP)/sensor_watch_rs/ \
+  -I$(TOP)/rust/faces/ \
 
 SRCS += \
   $(TOP)/tinyusb/src/tusb.c \
@@ -172,7 +172,7 @@ CFLAGS += -Wno-format -Wno-unused-parameter
 CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 
 RUST_TARGET=wasm32-unknown-emscripten
-RUST_LIB = $(TOP)/sensor_watch_rs/target/$(RUST_TARGET)/release/libsensor_watch_rs.a
+RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
 
 LIBS += $(RUST_LIB)
 
@@ -188,7 +188,7 @@ INCLUDES += \
   -I$(TOP)/watch-library/hardware/hal/utils/include/ \
   -I$(TOP)/watch-library/hardware/hpl/slcd/ \
   -I$(TOP)/watch-library/hardware/hw/ \
-  -I$(TOP)/sensor_watch_rs/ \
+  -I$(TOP)/rust/faces/ \
 
 SRCS += \
   $(TOP)/watch-library/simulator/main.c \

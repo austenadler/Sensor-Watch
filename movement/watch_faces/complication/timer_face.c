@@ -218,7 +218,7 @@ void timer_face_activate(movement_settings_t *settings, void *context) {
     // Only print the last digit of the timer number
     sprintf(buf, "%uT", timer_number % 10);
     // watch_display_string(buf, 0);
-    set_display_str();
+    // set_display_str();
     watch_set_colon();
     if(state->mode == running) {
         watch_date_time now = watch_rtc_get_date_time();

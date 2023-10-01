@@ -24,7 +24,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
     quote! {
             #[no_mangle]
             pub extern "C" fn #ident_face_setup(
-                settings: *mut ::sensor_watch_sys::movement_settings_t,
+                settings: *mut ::sensor_watch_rs::sys::movement_settings_t,
                 watch_face_index: ::cty::uint8_t,
                 context_ptr: *mut *mut ::cty::c_void,
             ) {
@@ -32,7 +32,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
                 if unsafe { context_ptr.as_mut().unwrap() }.is_null() {
                     let context: &'static #ident = unsafe {
-                        *context_ptr = ::sensor_watch_sys::malloc(::core::mem::size_of::<::core::mem::MaybeUninit<#ident>>()) as *mut ::core::ffi::c_void;
+                        *context_ptr = ::sensor_watch_rs::sys::malloc(::core::mem::size_of::<::core::mem::MaybeUninit<#ident>>()) as *mut ::core::ffi::c_void;
                         let context = (*context_ptr as *mut ::core::mem::MaybeUninit<#ident>).as_mut().unwrap();
                         (*context).write(<#ident as WatchFace>::face_initial_setup(settings, watch_face_index));
                         context.assume_init_mut()
@@ -47,7 +47,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
             #[no_mangle]
             pub extern "C" fn #ident_face_activate(
-                settings: *mut ::sensor_watch_sys::movement_settings_t,
+                settings: *mut ::sensor_watch_rs::sys::movement_settings_t,
                 context: *mut ::cty::c_void,
             ) {
                 info!("Called: kitchen_timer_face_activate ({context:?})");
@@ -59,8 +59,8 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
             #[no_mangle]
             pub extern "C" fn #ident_face_loop(
-                event: ::sensor_watch_sys::movement_event_t,
-                settings: *mut ::sensor_watch_sys::movement_settings_t,
+                event: ::sensor_watch_rs::sys::movement_event_t,
+                settings: *mut ::sensor_watch_rs::sys::movement_settings_t,
                 context: *mut ::cty::c_void,
             ) -> bool {
                 let event = MovementEvent::from(event);
@@ -72,7 +72,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
             #[no_mangle]
             pub extern "C" fn #ident_face_resign(
-                settings: *mut ::sensor_watch_sys::movement_settings_t,
+                settings: *mut ::sensor_watch_rs::sys::movement_settings_t,
                 context: *mut ::cty::c_void,
             ) {
                 let settings = unsafe { settings.as_mut().unwrap().bit };
@@ -83,7 +83,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
             #[no_mangle]
             pub extern "C" fn #ident_face_wants_background_task(
-                settings: *mut ::sensor_watch_sys::movement_settings_t,
+                settings: *mut ::sensor_watch_rs::sys::movement_settings_t,
                 context: *mut ::cty::c_void,
             ) -> bool {
                 let settings = unsafe { settings.as_mut().unwrap().bit };

@@ -1,18 +1,23 @@
 use core::{array, cmp::Ordering, ffi::CStr};
 
-use crate::face::WatchFace;
 use cstr::cstr;
 use cty::uint8_t;
-use derive::WatchFace;
-use sensor_watch_sys::{
-    display::indicator::DisplayIndicatorState, info, movement_cancel_background_task,
-    movement_cancel_background_task_for_face, movement_default_loop_handler,
-    movement_schedule_background_task_for_face, movement_settings_t,
-    movement_settings_t__bindgen_ty_1, time::TimeEntry, watch_buzzer_play_sequence,
-    watch_clear_colon, watch_clear_display, watch_date_time__bindgen_ty_1, watch_display_string,
-    watch_display_u8, watch_set_colon, watch_utility_date_time_from_unix_time,
-    watch_utility_offset_timestamp, write_u8_chars, BuzzerNote, EventType, MovementEvent,
-    WatchIndicatorSegment,
+use sensor_watch_rs::{
+    derive::WatchFace,
+    time::WatchDateTime,
+    display::indicator::DisplayIndicatorState,
+    face::WatchFace,
+    info,
+    EventType, MovementEvent, write_u8_chars,watch_display_u8, 
+time::TimeEntry,    sys::{
+        movement_cancel_background_task, movement_cancel_background_task_for_face,
+        movement_default_loop_handler, movement_schedule_background_task_for_face,
+        movement_settings_t, movement_settings_t__bindgen_ty_1, 
+        watch_buzzer_play_sequence, watch_clear_colon, watch_clear_display,
+        watch_date_time__bindgen_ty_1, watch_display_string, watch_set_colon,
+        watch_utility_date_time_from_unix_time, watch_utility_offset_timestamp,
+        BuzzerNote,  WatchIndicatorSegment,
+    },
 };
 
 // TODO: This must be static because the callback to buzzer needs to be a function with no parameters
@@ -53,7 +58,6 @@ const DEFAULT_TIMER_PRESETS: &[TimeEntry; NUM_TIMER_PRESETS] = &[
     },
 ];
 
-use sensor_watch_sys::time::WatchDateTime;
 
 extern "C" fn callback() {
     info!("Callback has been called");
@@ -131,7 +135,7 @@ impl Timer {
         // let mut header_buf = [0x0; 4 + 1];
         let mut header_buf: [u8; 4 + 1] = *b"T  _\0";
 
-        sensor_watch_sys::write_u8_chars(&mut header_buf[3..=3], self.idx as u8 + 1, false);
+        sensor_watch_rs::write_u8_chars(&mut header_buf[3..=3], self.idx as u8 + 1, false);
 
         // Just to be safe
         header_buf[4] = 0x0;
