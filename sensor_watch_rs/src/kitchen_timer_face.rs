@@ -7,10 +7,10 @@ use derive::WatchFace;
 use sensor_watch_sys::{
     display::indicator::DisplayIndicatorState, info, movement_cancel_background_task,
     movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
-    time::TimeEntry, watch_clear_display, watch_date_time__bindgen_ty_1, watch_display_string,
-    watch_display_u8, watch_set_colon, watch_utility_date_time_from_unix_time,
-    watch_utility_offset_timestamp, write_u8_chars, EventType, MovementEvent,
-    WatchIndicatorSegment,
+    time::TimeEntry, watch_clear_colon, watch_clear_display, watch_date_time__bindgen_ty_1,
+    watch_display_string, watch_display_u8, watch_set_colon,
+    watch_utility_date_time_from_unix_time, watch_utility_offset_timestamp, write_u8_chars,
+    EventType, MovementEvent, WatchIndicatorSegment,
 };
 
 const NUM_TIMERS: usize = 5;
@@ -250,6 +250,23 @@ impl Context {
         };
     }
 
+    /// Advance the state of the all timers face
+    ///
+    /// If there multiple running timers, show the next one
+    fn advance_all_timers_idx(&mut self) {
+        let len = self.timers.len();
+
+        self.all_timers_idx = self
+            .all_timers_idx
+            .map(|current_idx| {
+                (1..=len)
+                    .map(|offset| (current_idx as usize + offset) % len)
+                    .find(|idx| self.timers[*idx].state.is_started())
+                    .map(|n| n as u8)
+            })
+            .unwrap_or_else(|| self.nearest_timer().map(|t| t.idx));
+    }
+
     /// Return the next timer that will go off
     fn nearest_timer(&self) -> Option<&Timer> {
         self.timers
@@ -281,8 +298,19 @@ impl Context {
         match &displayed_timer.state {
             TimerState::Ready => {
                 self.display_indicator_state.tick_frequency.set(1);
-                // Draw the preset that's ready to go
-                self.timer_presets[displayed_timer.timer_preset_idx as usize].watch_display()
+                unsafe {
+                    watch_clear_colon();
+                }
+
+                if self.blink_toggle {
+                    unsafe {
+                        watch_display_string(cstr!("      ").as_ptr().cast_mut(), 4);
+                    }
+                } else {
+                    unsafe {
+                        watch_display_string(cstr!("BEEP  ").as_ptr().cast_mut(), 4);
+                    }
+                }
             }
             TimerState::Started { time_remaining } => {
                 self.display_indicator_state.tick_frequency.set(1);
@@ -294,6 +322,7 @@ impl Context {
 
                 // TODO: Flash here
                 if self.blink_toggle {
+                    // TODO: Do we need this line if we're immediately clearing it?
                     time_remaining.watch_display();
                     // Blank the time
                     unsafe {
@@ -493,6 +522,7 @@ impl WatchFace for Context {
                 match self.face_state {
                     FaceState::AllTimers => {
                         // Next running timer
+                        self.advance_all_timers_idx();
                     }
                     FaceState::Timer(timer_n) => {
                         let timer = &self.timers[timer_n];
