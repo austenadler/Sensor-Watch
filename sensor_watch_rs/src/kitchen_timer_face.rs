@@ -13,6 +13,10 @@ use sensor_watch_sys::{
     EventType, MovementEvent, WatchIndicatorSegment,
 };
 
+// TODO: This must be static because the callback to buzzer needs to be a function with no parameters
+/// A reference to the initialized kitchen timer context
+static mut STATE_REF: Option<*mut Context> = None;
+
 const NUM_TIMERS: usize = 5;
 const NUM_TIMER_PRESETS: usize = 3;
 const DEFAULT_TIMER_PRESETS: &[TimeEntry; NUM_TIMER_PRESETS] = &[
@@ -644,5 +648,15 @@ impl WatchFace for Context {
             DisplayIndicatorState::new(),
         )
         .resign();
+    }
+
+    fn face_post_initial_setup(&'static self) {
+        // We need a static ref of this context for waking
+
+        // Safety: we can assume that SensorWatch won't free the context, so this pointer is valid for 'static
+        // Also, this will only be run once
+        unsafe {
+            STATE_REF.replace(core::mem::transmute::<&'static Self, *mut Self>(self));
+        }
     }
 }

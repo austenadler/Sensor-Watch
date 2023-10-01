@@ -1,5 +1,5 @@
 use cty::uint8_t;
-use sensor_watch_sys::{movement_settings_t__bindgen_ty_1, MovementEvent};
+use sensor_watch_sys::{info, movement_settings_t__bindgen_ty_1, MovementEvent};
 
 pub trait WatchFace {
     fn face_initial_setup(
@@ -44,5 +44,12 @@ pub trait WatchFace {
         // context: *mut c_void,
     ) -> bool {
         false
+    }
+
+    /// After initial setup, pass a reference to the allocated context, so it can be initialized in a static
+    ///
+    /// This will only be run once after `face_initial_setup` is called
+    fn face_post_initial_setup(&'static self) {
+        info!("Called face_post_initial_setup");
     }
 }

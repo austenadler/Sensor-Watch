@@ -31,17 +31,20 @@ pub fn describe(input: TokenStream) -> TokenStream {
                 let settings = unsafe { settings.as_mut().unwrap().bit };
 
                 if unsafe { context_ptr.as_mut().unwrap() }.is_null() {
-                    let _context = unsafe {
+                    let context: &'static #ident = unsafe {
                         *context_ptr = ::sensor_watch_sys::malloc(::core::mem::size_of::<::core::mem::MaybeUninit<#ident>>()) as *mut ::core::ffi::c_void;
                         let context = (*context_ptr as *mut ::core::mem::MaybeUninit<#ident>).as_mut().unwrap();
                         (*context).write(<#ident as WatchFace>::face_initial_setup(settings, watch_face_index));
                         context.assume_init_mut()
                     };
+
+                    context.face_post_initial_setup();
                 } else {
                     let context = unsafe{(*context_ptr as *mut #ident).as_mut().unwrap()};
                     context.face_setup(settings, watch_face_index)
                 }
             }
+
             #[no_mangle]
             pub extern "C" fn #ident_face_activate(
                 settings: *mut ::sensor_watch_sys::movement_settings_t,
@@ -53,6 +56,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
                 context.face_activate(settings)
             }
+
             #[no_mangle]
             pub extern "C" fn #ident_face_loop(
                 event: ::sensor_watch_sys::movement_event_t,
@@ -65,6 +69,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
                 context.face_loop(event, settings)
             }
+
             #[no_mangle]
             pub extern "C" fn #ident_face_resign(
                 settings: *mut ::sensor_watch_sys::movement_settings_t,
@@ -75,6 +80,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
 
                 context.face_resign(settings)
             }
+
             #[no_mangle]
             pub extern "C" fn #ident_face_wants_background_task(
                 settings: *mut ::sensor_watch_sys::movement_settings_t,
