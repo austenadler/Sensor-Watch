@@ -101,33 +101,11 @@ impl Timer {
         }
     }
 
-    // fn draw(&self, ctx: &Context) {
-    // }
-
     fn draw_header(&self) {
-        let mut header_buf = [0x0; 4 + 1];
+        // let mut header_buf = [0x0; 4 + 1];
+        let mut header_buf: [u8; 4 + 1] = *b"T  _\0";
 
-        // TODO: Decide if I want the preset number to show up at the top right
-
-        {
-            // Draws ` T x` where `x` is the timer number
-            header_buf[0] = b'T';
-            header_buf[1] = b' ';
-            header_buf[2] = b' ';
-            sensor_watch_sys::write_u8_chars(&mut header_buf[3..=3], self.idx as u8 + 1, false);
-        }
-
-        // {
-        //     // Draws `xT y` where `x` is the timer number, and `y` is the preset number
-        //     sensor_watch_sys::write_u8_chars(&mut header_buf[0..=0], self.idx as u8 + 1, false);
-        //     header_buf[1] = b'T';
-        //     header_buf[2] = b' ';
-        //     sensor_watch_sys::write_u8_chars(
-        //         &mut header_buf[3..=3],
-        //         self.timer_preset_idx + 1,
-        //         false,
-        //     );
-        // }
+        sensor_watch_sys::write_u8_chars(&mut header_buf[3..=3], self.idx as u8 + 1, false);
 
         // Just to be safe
         header_buf[4] = 0x0;
@@ -282,13 +260,13 @@ impl Context {
 
     fn draw_all_timers_face(&mut self) {
         info!("Drawing all timers face");
-        // self.all_timers_idx = .map(|t| t.idx);
-        let Some(first_running_timer) = self.all_timers_idx.map(|idx| &self.timers[idx as usize])
+        let Some(displayed_timer) = self.all_timers_idx.map(|idx| &self.timers[idx as usize])
         // .as_ref()
         // .or_else(|| self.nearest_timer())
         else {
             // We don't want to be on the AT face if there are no running timers
             // TODO: This shouldn't be in the draw function
+            info!("AT timer has no displayed timer anymore");
             self.advance_state();
             self.draw();
             return;
@@ -298,7 +276,35 @@ impl Context {
         unsafe {
             watch_display_string(cstr!("AT        ").as_ptr().cast_mut(), 0);
         }
-        watch_display_u8(first_running_timer.idx + 1, false, 2);
+        watch_display_u8(displayed_timer.idx + 1, false, 2);
+
+        match &displayed_timer.state {
+            TimerState::Ready => {
+                self.display_indicator_state.tick_frequency.set(1);
+                // Draw the preset that's ready to go
+                self.timer_presets[displayed_timer.timer_preset_idx as usize].watch_display()
+            }
+            TimerState::Started { time_remaining } => {
+                self.display_indicator_state.tick_frequency.set(1);
+                time_remaining.watch_display();
+            }
+            TimerState::Paused { time_remaining } => {
+                // We want to blink more frequently
+                self.display_indicator_state.tick_frequency.set(2);
+
+                // TODO: Flash here
+                if self.blink_toggle {
+                    time_remaining.watch_display();
+                    // Blank the time
+                    unsafe {
+                        watch_display_string(cstr!("      ").as_ptr().cast_mut(), 4);
+                        watch_set_colon();
+                    }
+                } else {
+                    time_remaining.watch_display();
+                }
+            }
+        }
     }
 
     fn draw_timer_face(&mut self, timer_n: usize) {

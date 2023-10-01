@@ -1,4 +1,5 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
+#![allow(rustdoc::bare_urls)]
 #![allow(unused_imports)]
 #![allow(non_camel_case_types)]
 // We're importing from c, give me a break
