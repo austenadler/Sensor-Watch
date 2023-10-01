@@ -8,3 +8,4 @@
 // #include "../watch-library/shared/watch/watch_slcd.h"
 #include "../watch-library/shared/watch/watch_utility.h"
 #include "../watch-library/shared/watch/watch_rtc.h"
+#include "../watch-library/shared/watch/watch_buzzer.h"

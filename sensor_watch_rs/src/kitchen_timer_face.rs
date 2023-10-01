@@ -6,16 +6,32 @@ use cty::uint8_t;
 use derive::WatchFace;
 use sensor_watch_sys::{
     display::indicator::DisplayIndicatorState, info, movement_cancel_background_task,
-    movement_default_loop_handler, movement_settings_t, movement_settings_t__bindgen_ty_1,
-    time::TimeEntry, watch_clear_colon, watch_clear_display, watch_date_time__bindgen_ty_1,
-    watch_display_string, watch_display_u8, watch_set_colon,
-    watch_utility_date_time_from_unix_time, watch_utility_offset_timestamp, write_u8_chars,
-    EventType, MovementEvent, WatchIndicatorSegment,
+    movement_cancel_background_task_for_face, movement_default_loop_handler,
+    movement_schedule_background_task_for_face, movement_settings_t,
+    movement_settings_t__bindgen_ty_1, time::TimeEntry, watch_buzzer_play_sequence,
+    watch_clear_colon, watch_clear_display, watch_date_time__bindgen_ty_1, watch_display_string,
+    watch_display_u8, watch_set_colon, watch_utility_date_time_from_unix_time,
+    watch_utility_offset_timestamp, write_u8_chars, BuzzerNote, EventType, MovementEvent,
+    WatchIndicatorSegment,
 };
 
 // TODO: This must be static because the callback to buzzer needs to be a function with no parameters
 /// A reference to the initialized kitchen timer context
 static mut STATE_REF: Option<*mut Context> = None;
+
+static BEEPS: &[i8] = &[
+    BuzzerNote::BUZZER_NOTE_C8.0 as i8,
+    3,
+    BuzzerNote::BUZZER_NOTE_REST.0 as i8,
+    3,
+    -2,
+    2,
+    BuzzerNote::BUZZER_NOTE_C8.0 as i8,
+    5,
+    BuzzerNote::BUZZER_NOTE_REST.0 as i8,
+    25,
+    0,
+];
 
 const NUM_TIMERS: usize = 5;
 const NUM_TIMER_PRESETS: usize = 3;
@@ -38,6 +54,12 @@ const DEFAULT_TIMER_PRESETS: &[TimeEntry; NUM_TIMER_PRESETS] = &[
 ];
 
 use sensor_watch_sys::time::WatchDateTime;
+
+extern "C" fn callback() {
+    info!("Callback has been called");
+}
+
+// fn register_callback(cb: extern fn(i32)) -> i32;
 
 #[derive(Debug)]
 enum FaceState {
@@ -163,80 +185,38 @@ impl Context {
         }
 
         // The next timer that will be going off
+        let previous_alarm = self.next_alarm;
         self.next_alarm = self.nearest_timer().map(|t| (t.seconds_remaining(), t.idx));
 
+        match (previous_alarm, self.next_alarm) {
+            // Stopping a background alert
+            (Some(_), None) => {
+                // We had a timer, and we don't have one anymore
+                // Cancel whatever background task we had
+                info!("Cancelling background task");
+                unsafe { movement_cancel_background_task_for_face(self.watch_face_index) };
+            }
+
+            // Setting a background alert
+            (None, Some(next)) => {
+                // We didn't have a timer before, but we do now
+                info!("Got: (None, Some(_))");
+
+                let time = WatchDateTime::now() + next.0;
+                time.schedule_background_task_for_face(self.watch_face_index);
+            }
+            (Some(current), Some(next)) if current != next => {
+                // We have a new "next" timer. This happens when a newly started timer will finish before the old one
+                info!("Got: (Some(_) != Some(_))");
+
+                let time = WatchDateTime::now() + next.0;
+                time.schedule_background_task_for_face(self.watch_face_index);
+            }
+            // No timers are started, or the next timer time is the same
+            (None, None) | (Some(_), Some(_)) => {}
+        }
+
         info!("Set next_alarm to {:?}", self.next_alarm);
-
-        // TODO: Work when the face is in the background
-        // let new_next_timer_alarm = self
-        //     .timers
-        //     .iter()
-        //     .filter(|t| match t.state {
-        //         TimerState::Started { time_remaining: _ } => true,
-        //         TimerState::Ready | TimerState::Paused { time_remaining: _ } => false,
-        //     })
-        //     // Get the timer that is supposed to go off next
-        //     .reduce(|acc, t| match (&acc.state, &t.state) {
-        //         (
-        //             TimerState::Started {
-        //                 time_remaining: acc_time_remaining,
-        //             },
-        //             TimerState::Started {
-        //                 time_remaining: t_time_remaining,
-        //             },
-        //         ) => {
-        //             if acc_time_remaining > t_time_remaining {
-        //                 t
-        //             } else {
-        //                 acc
-        //             }
-        //         }
-
-        //         (TimerState::Started { .. }, TimerState::Ready)
-        //         | (TimerState::Started { .. }, TimerState::Paused { .. })
-        //         | (TimerState::Ready, TimerState::Started { .. })
-        //         | (TimerState::Paused { .. }, TimerState::Started { .. })
-        //         | (TimerState::Ready, TimerState::Ready)
-        //         | (TimerState::Ready, TimerState::Paused { .. })
-        //         | (TimerState::Paused { .. }, TimerState::Ready)
-        //         | (TimerState::Paused { .. }, TimerState::Paused { .. }) => acc,
-        //     })
-        //     .map(|t| t.idx);
-
-        // match (self.next_timer_alarm, new_next_timer_alarm) {
-        //     (Some(old), Some(new)) => {
-        //         if old != new {
-        //             info!("One timer stopped, but there is another running");
-        //             // sensor_watch_sys::movement_schedule_background_task
-
-        //             // movement_schedule_background_task_for_face(state->watch_face_index, target_dt);
-        //         }
-        //     }
-        //     (None, Some(new)) => {
-        //         // Adding a timer
-        //         info!("Adding timer");
-        //         // TODO: Get the time out of the timer properly
-        //         let time = WatchDateTime::now() + self.timers[new as usize].seconds_remaining();
-
-        //         info!("Scheduling background task for {time:?}");
-        //         time.schedule_background_task_for_face(self.watch_face_index);
-        //     }
-        //     (Some(_old), None) => {
-        //         info!("Timer ended");
-        //         // There was a timer, but there isn't now
-        //         unsafe {
-        //             movement_cancel_background_task();
-        //         }
-        //     }
-        //     (None, None) => {
-        //         info!("No timer is running");
-        //         // No change
-        //     }
-        // }
-
-        // self.next_timer_alarm = new_next_timer_alarm;
-
-        // info!("Set next alarm to: {:?}", self.next_timer_alarm);
     }
 
     fn advance_state(&mut self) {
@@ -621,6 +601,7 @@ impl WatchFace for Context {
             }
             EventType::BackgroundTask => {
                 info!("Got background task wakeup");
+                unsafe { watch_buzzer_play_sequence(BEEPS.as_ptr() as *mut i8, Some(callback)) }
             }
             EventType::AlarmButtonDown
             | EventType::AlarmLongUp
