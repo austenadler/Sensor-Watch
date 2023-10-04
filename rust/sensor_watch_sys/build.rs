@@ -19,7 +19,7 @@ fn bindgen() {
     println!("cargo:rerun-if-changed=wrapper.h");
 
     let includes = match env::var("TARGET").unwrap().as_str() {
-        "thumbv7em-none-eabi" => [
+        "thumbv7em-none-eabi" | "thumbv6m-none-eabi" => [
             "/usr/arm-linux-gnueabi/usr/include/",
             "../../tinyusb/src",
             "../../boards/OSO-SWAT-A1-05",

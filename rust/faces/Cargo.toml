@@ -21,9 +21,9 @@ sensor_watch_rs = {path="../sensor_watch_rs/"}
 [build-dependencies]
 cbindgen = "0.24.0"
 
-[profile.release]
-strip = true
-lto = true
-codegen-units = 1
-panic = "abort"
-opt-level =  "z"
+# [profile.release]
+# strip = true
+# lto = true
+# codegen-units = 1
+# panic = "abort"
+# opt-level =  "z"

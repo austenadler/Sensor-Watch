@@ -1,6 +1,22 @@
 [build]
-target = "thumbv7em-none-eabi"
+target = "thumbv6m-none-eabi"
 
+# [target.thumbv6m-none-eabi]
+# rustflags = [
+#     "-Z",
+#     "build-std=std,panic_abort",
+#     "-Z",
+#     "build-std-features=panic_immediate_abort",
+# ]
 
-# thumbv7em-none-eabi
-# wasm32-unknown-emscripten
+# [target.wasm32-unknown-emscripten]
+# rustflags = [
+#     "-Z",
+#     "build-std=std,panic_abort",
+#     "-Z",
+#     "build-std-features=panic_immediate_abort",
+# ]
+
+# Right one: thumbv6m-none-eabi
+# Wrong one: thumbv7em-none-eabi
+# Simulator: wasm32-unknown-emscripten

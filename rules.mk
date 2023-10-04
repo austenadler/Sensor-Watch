@@ -9,8 +9,10 @@ SUBMODULES = tinyusb
 COBRA = cobra -f
 
 ifndef EMSCRIPTEN
+RUST_BUILD_STD = panic_abort
 all: $(BUILD)/$(BIN).elf $(BUILD)/$(BIN).hex $(BUILD)/$(BIN).bin $(BUILD)/$(BIN).uf2 size
 else
+RUST_BUILD_STD = std,panic_abort
 all: $(BUILD)/$(BIN).html
 endif
 
@@ -27,8 +29,8 @@ $(BUILD)/$(BIN).elf: $(RUST_LIB) $(OBJS)
 	@$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
 $(RUST_LIB):
-	@echo Cargo $(RUST_TARGET)
-	@cargo +nightly build --release --manifest-path $(TOP)/rust/faces/Cargo.toml --target $(RUST_TARGET) -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
+	cargo +nightly build --release --manifest-path $(TOP)/rust/Cargo.toml --target $(RUST_TARGET) -Z build-std=$(RUST_BUILD_STD) -Z build-std-features=panic_immediate_abort
+	# arm-none-eabi-strip $(RUST_LIB)
 
 $(BUILD)/$(BIN).hex: $(BUILD)/$(BIN).elf
 	@echo OBJCOPY $@

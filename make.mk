@@ -63,7 +63,7 @@ LDFLAGS += -mcpu=cortex-m0plus -mthumb
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=$(TOP)/watch-library/hardware/linker/saml22j18.ld
 
-RUST_TARGET=thumbv7em-none-eabi
+RUST_TARGET=thumbv6m-none-eabi
 RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
 
 LIBS += $(RUST_LIB)

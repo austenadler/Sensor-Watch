@@ -5,5 +5,5 @@ xbps-install clang make gcc cross-arm-linux-gnueabi-libc
 # Also install emscripten https://emscripten.org/docs/getting_started/downloads.html
 
 # Install targets
-rustup target add thumbv7em-none-eabi wasm32-unknown-emscripten
+rustup target add thumbv6m-none-eabi wasm32-unknown-emscripten
 ----
