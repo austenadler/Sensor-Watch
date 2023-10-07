@@ -31,15 +31,19 @@ pub fn describe(input: TokenStream) -> TokenStream {
             let settings = unsafe { settings.as_mut().unwrap().bit };
 
             if unsafe { context_ptr.as_mut().unwrap() }.is_null() {
+                // This is the first watch boot, since context_ptr is null
+                // Allocate a new face_initial_setup
                 let context: &'static #ident = unsafe {
-                    *context_ptr = ::sensor_watch_rs::sys::malloc(::core::mem::size_of::<::core::mem::MaybeUninit<#ident>>()) as *mut ::core::ffi::c_void;
-                    let context = (*context_ptr as *mut ::core::mem::MaybeUninit<#ident>).as_mut().unwrap();
-                    (*context).write(<#ident as WatchFace>::face_initial_setup(settings, watch_face_index));
-                    context.assume_init_mut()
+                    let ptr = ::sensor_watch_rs::alloc::boxed::Box::leak(::sensor_watch_rs::alloc::boxed::Box::new(<#ident as WatchFace>::face_initial_setup(settings, watch_face_index)));
+
+                    *context_ptr = (ptr) as *mut #ident as *mut ::core::ffi::c_void;
+
+                    ptr
                 };
 
                 context.face_post_initial_setup();
             } else {
+                // This watch face is waking from sleep mode
                 let context = unsafe{(*context_ptr as *mut #ident).as_mut().unwrap()};
                 context.face_setup(settings, watch_face_index)
             }

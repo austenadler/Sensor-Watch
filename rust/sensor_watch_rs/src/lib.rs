@@ -1,6 +1,8 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(unused_imports)]
 
+pub extern crate alloc;
+
 pub mod display;
 pub mod face;
 pub mod time;
@@ -17,6 +19,11 @@ use sys::{
 };
 
 pub const WATCH_NUM_DIGITS: u8 = 10;
+
+use libc_alloc::LibcAlloc;
+
+#[global_allocator]
+static ALLOCATOR: LibcAlloc = LibcAlloc;
 
 // pub use face::WatchFace;
 
