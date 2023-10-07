@@ -29,7 +29,6 @@
 #include "timer_face.h"
 #include "watch.h"
 #include "watch_utility.h"
-#include "sensor_watch_rs.h"
 
 // The timer number to display at the top. If the first timer is at index 2, set this to 2
 #define FIRST_TIMER_INDEX 1

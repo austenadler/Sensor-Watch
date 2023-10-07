@@ -1,5 +1,8 @@
 #![cfg_attr(not(target_arch = "wasm32"), no_std)]
 #![allow(unused_imports)]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
+#![feature(const_trait_impl)]
 
 pub extern crate alloc;
 
@@ -7,6 +10,7 @@ pub mod display;
 pub mod face;
 pub mod time;
 pub use derive;
+pub mod notes;
 
 use core::{
     ffi::{c_uint, c_void, CStr},

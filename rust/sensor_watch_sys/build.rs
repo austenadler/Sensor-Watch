@@ -19,7 +19,7 @@ fn bindgen() {
     println!("cargo:rerun-if-changed=wrapper.h");
 
     let includes = match env::var("TARGET").unwrap().as_str() {
-        "thumbv7em-none-eabi" | "thumbv6m-none-eabi" => [
+        "thumbv6m-none-eabi" => [
             "/usr/arm-linux-gnueabi/usr/include/",
             "../../tinyusb/src",
             "../../boards/OSO-SWAT-A1-05",
@@ -97,6 +97,7 @@ fn bindgen() {
         .header("wrapper.h")
         .clang_args(includes)
         .allowlist_file("./../../movement/movement.h")
+        .allowlist_file("./../../watch-library/shared/watch/watch.h")
         .allowlist_file("./../../watch-library/shared/watch/watch_slcd.h")
         .allowlist_file("./../../watch-library/shared/watch/watch_utility.h")
         .allowlist_file("./../../watch-library/shared/watch/watch_rtc.h")

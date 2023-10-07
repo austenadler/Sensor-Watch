@@ -6,4 +6,7 @@ xbps-install clang make gcc cross-arm-linux-gnueabi-libc
 
 # Install targets
 rustup target add thumbv6m-none-eabi wasm32-unknown-emscripten
+
+# Testing (currently doesn't work)
+cargo test -Zbuild-std
 ----

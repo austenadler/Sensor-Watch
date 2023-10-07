@@ -95,7 +95,10 @@
 #include "flashlight_face.h"
 #include "decimal_time_face.h"
 #include "wyoscan_face.h"
+
+#if DISABLE_RUST != 1
 #include "sensor_watch_rs.h"
+#endif
 // New includes go above this line.
 
 #endif // MOVEMENT_FACES_H_

@@ -63,12 +63,6 @@ LDFLAGS += -mcpu=cortex-m0plus -mthumb
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += -Wl,--script=$(TOP)/watch-library/hardware/linker/saml22j18.ld
 
-RUST_TARGET=thumbv6m-none-eabi
-RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
-
-LIBS += $(RUST_LIB)
-LIBS += -lm
-
 INCLUDES += \
   -I$(TOP)/tinyusb/src \
   -I$(TOP)/boards/$(BOARD) \
@@ -100,7 +94,17 @@ INCLUDES += \
   -I$(TOP)/watch-library/hardware/hw/ \
   -I$(TOP)/watch-library/hardware/watch/ \
   -I$(TOP)/watch-library/hardware \
-  -I$(TOP)/rust/faces/ \
+
+ifeq ($(DISABLE_RUST),1)
+LIBS += -lm
+else
+RUST_TARGET=thumbv6m-none-eabi
+RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
+RUST_BUILD_STD = panic_abort
+
+LIBS += $(RUST_LIB) -lm
+INCLUDES +=  -I$(TOP)/rust/faces/
+endif
 
 SRCS += \
   $(TOP)/tinyusb/src/tusb.c \
@@ -171,11 +175,6 @@ CFLAGS += -W -Wall -Wextra -Wmissing-prototypes -Wmissing-declarations
 CFLAGS += -Wno-format -Wno-unused-parameter
 CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 
-RUST_TARGET=wasm32-unknown-emscripten
-RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
-
-LIBS += $(RUST_LIB)
-
 INCLUDES += \
   -I$(TOP)/boards/$(BOARD) \
   -I$(TOP)/watch-library/shared/driver/ \
@@ -188,7 +187,17 @@ INCLUDES += \
   -I$(TOP)/watch-library/hardware/hal/utils/include/ \
   -I$(TOP)/watch-library/hardware/hpl/slcd/ \
   -I$(TOP)/watch-library/hardware/hw/ \
-  -I$(TOP)/rust/faces/ \
+
+ifeq ($(DISABLE_RUST),1)
+LIBS += -lm
+else
+RUST_TARGET=wasm32-unknown-emscripten
+RUST_LIB = $(TOP)/rust/target/$(RUST_TARGET)/release/libfaces.a
+RUST_BUILD_STD = std,panic_abort
+
+LIBS += $(RUST_LIB) -lm
+INCLUDES +=  -I$(TOP)/rust/faces/
+endif
 
 SRCS += \
   $(TOP)/watch-library/simulator/main.c \
@@ -226,6 +235,8 @@ ifeq ($(COLOR), RED)
 CFLAGS += -DWATCH_INVERT_LED_POLARITY
 CFLAGS += -DNO_FREQCORR
 endif
+CFLAGS += -DWATCH_INVERT_LED_POLARITY
+CFLAGS += -DNO_FREQCORR
 
 ifdef FIRMWARE
 CFLAGS += -DMOVEMENT_FIRMWARE_$(FIRMWARE)=1

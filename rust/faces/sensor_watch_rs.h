@@ -21,4 +21,18 @@ void kitchen_timer_face_setup(movement_settings_t *settings,
 
 bool kitchen_timer_face_wants_background_task(movement_settings_t *settings, void *context);
 
+void ships_bell_lite_face_activate(movement_settings_t *settings, void *context);
+
+bool ships_bell_lite_face_loop(movement_event_t event,
+                               movement_settings_t *settings,
+                               void *context);
+
+void ships_bell_lite_face_resign(movement_settings_t *settings, void *context);
+
+void ships_bell_lite_face_setup(movement_settings_t *settings,
+                                uint8_t watch_face_index,
+                                void **context_ptr);
+
+bool ships_bell_lite_face_wants_background_task(movement_settings_t *settings, void *context);
+
 #endif /* SENSOR_WATCH_RS_H */

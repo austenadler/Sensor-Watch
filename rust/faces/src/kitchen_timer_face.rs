@@ -620,7 +620,7 @@ impl WatchFace for Context {
             },
         }
 
-        false
+        true
     }
 
     fn face_resign(&mut self, _settings: movement_settings_t__bindgen_ty_1) {

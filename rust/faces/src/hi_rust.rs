@@ -58,7 +58,7 @@ impl WatchFace for Context {
             movement_default_loop_handler(event.into(), &mut (settings.into()));
         }
 
-        false
+        true
     }
 
     fn face_resign(&mut self, _settings: movement_settings_t__bindgen_ty_1) {

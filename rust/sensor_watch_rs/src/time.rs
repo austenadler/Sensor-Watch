@@ -19,18 +19,15 @@ pub struct WatchDateTime(watch_date_time);
 
 impl Debug for WatchDateTime {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        // We can assume this will be safe
-        let value = unsafe { self.0.unit };
-
         write!(
             f,
             "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
-            value.year(),
-            value.month(),
-            value.day(),
-            value.hour(),
-            value.minute(),
-            value.second(),
+            self.year(),
+            self.month(),
+            self.day(),
+            self.hour(),
+            self.minute(),
+            self.second(),
         )
     }
 }
@@ -38,6 +35,30 @@ impl Debug for WatchDateTime {
 impl WatchDateTime {
     pub fn now() -> Self {
         Self(unsafe { watch_rtc_get_date_time() })
+    }
+
+    pub fn year(&self) -> u32 {
+        unsafe { self.0.unit }.year()
+    }
+
+    pub fn month(&self) -> u32 {
+        unsafe { self.0.unit }.month()
+    }
+
+    pub fn day(&self) -> u32 {
+        unsafe { self.0.unit }.day()
+    }
+
+    pub fn hour(&self) -> u32 {
+        unsafe { self.0.unit }.hour()
+    }
+
+    pub fn minute(&self) -> u32 {
+        unsafe { self.0.unit }.minute()
+    }
+
+    pub fn second(&self) -> u32 {
+        unsafe { self.0.unit }.second()
     }
 
     pub fn from_utc_secs(seconds: uint32_t) -> Self {

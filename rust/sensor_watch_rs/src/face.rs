@@ -7,6 +7,7 @@ pub trait WatchFace {
         watch_face_index: uint8_t,
         // context_ptr: *mut *mut c_void,
     ) -> Self;
+
     fn face_setup(
         &mut self,
         _settings: movement_settings_t__bindgen_ty_1,
@@ -17,12 +18,14 @@ pub trait WatchFace {
         // context_ptr: *mut *mut c_void,
     ) {
     }
+
     fn face_activate(
         &mut self,
         settings: movement_settings_t__bindgen_ty_1,
         // settings: *mut movement_settings_t,
         // context: *mut c_void,
     );
+
     fn face_loop(
         &mut self,
         event: MovementEvent,
@@ -31,12 +34,14 @@ pub trait WatchFace {
         // settings: *mut movement_settings_t,
         // context: *mut c_void,
     ) -> bool;
+
     fn face_resign(
         &mut self,
         settings: movement_settings_t__bindgen_ty_1,
         // settings: *mut movement_settings_t,
         // context: *mut c_void,
     );
+
     fn face_wants_background_task(
         &mut self,
         _settings: movement_settings_t__bindgen_ty_1,

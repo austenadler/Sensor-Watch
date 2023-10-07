@@ -9,12 +9,12 @@ SUBMODULES = tinyusb
 COBRA = cobra -f
 
 ifndef EMSCRIPTEN
-RUST_BUILD_STD = panic_abort
 all: $(BUILD)/$(BIN).elf $(BUILD)/$(BIN).hex $(BUILD)/$(BIN).bin $(BUILD)/$(BIN).uf2 size
 else
-RUST_BUILD_STD = std,panic_abort
 all: $(BUILD)/$(BIN).html
 endif
+
+CFLAGS += -DDISABLE_RUST=$(DISABLE_RUST)
 
 $(BUILD)/$(BIN).html: $(RUST_LIB) $(OBJS)
 	@echo HTML $@
@@ -29,8 +29,9 @@ $(BUILD)/$(BIN).elf: $(RUST_LIB) $(OBJS)
 	@$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
 $(RUST_LIB):
+ifneq ($(DISABLE_RUST),1)
 	cargo +nightly build --release --manifest-path $(TOP)/rust/Cargo.toml --target $(RUST_TARGET) -Z build-std=$(RUST_BUILD_STD) -Z build-std-features=panic_immediate_abort
-	# arm-none-eabi-strip $(RUST_LIB)
+endif
 
 $(BUILD)/$(BIN).hex: $(BUILD)/$(BIN).elf
 	@echo OBJCOPY $@
@@ -65,6 +66,9 @@ size: $(BUILD)/$(BIN).elf
 clean:
 	@echo clean
 	@-rm -rf $(BUILD)
+ifneq ($(DISABLE_RUST),1)
+	@cargo clean --manifest-path $(TOP)/rust/Cargo.toml
+endif
 
 analyze:
 	@$(COBRA) basic $(INCLUDES) $(DEFINES) $(SRCS)
