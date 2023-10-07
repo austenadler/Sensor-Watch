@@ -2,11 +2,16 @@ use cty::uint8_t;
 use sensor_watch_sys::{info, movement_settings_t__bindgen_ty_1, MovementEvent};
 
 pub trait WatchFace {
+    /// Called once per boot
     fn face_initial_setup(
         settings: movement_settings_t__bindgen_ty_1,
         watch_face_index: uint8_t,
         // context_ptr: *mut *mut c_void,
     ) -> Self;
+
+    /// Called every wakeup, and *not* called on boot
+    ///
+    /// You may need to enable sensors here
     fn face_setup(
         &mut self,
         _settings: movement_settings_t__bindgen_ty_1,
@@ -17,12 +22,16 @@ pub trait WatchFace {
         // context_ptr: *mut *mut c_void,
     ) {
     }
+
+    /// Called whenever this face is switched to
     fn face_activate(
         &mut self,
         settings: movement_settings_t__bindgen_ty_1,
         // settings: *mut movement_settings_t,
         // context: *mut c_void,
     );
+
+    /// Called once per [`MovementEvent`]
     fn face_loop(
         &mut self,
         event: MovementEvent,
@@ -31,12 +40,18 @@ pub trait WatchFace {
         // settings: *mut movement_settings_t,
         // context: *mut c_void,
     ) -> bool;
+
+    /// Called every time the face is moved the background
     fn face_resign(
         &mut self,
         settings: movement_settings_t__bindgen_ty_1,
         // settings: *mut movement_settings_t,
         // context: *mut c_void,
     );
+
+    /// Returns true if SensorWatch should send a [`EventType::BackgroundTask`] event to this face
+    ///
+    /// Called once per minute
     fn face_wants_background_task(
         &mut self,
         _settings: movement_settings_t__bindgen_ty_1,
